@@ -2,8 +2,8 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>02.11.2025 20:22:20</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1762111340573</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>02.11.2025 21:26:49</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1762115209662</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>D:\GitHub\esl1_fpga_fir\quartus_proj\uart_nios_qsys\software\fir_uart_nios_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\uart_nios.sopcinfo</SopcDesignFile>
