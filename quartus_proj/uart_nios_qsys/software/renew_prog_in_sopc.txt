@@ -1,0 +1,7 @@
+Solved: [NIOS] New CPU Memory HEX file - Intel Communities
+You do not have to regenerate the NIOS sub-system if you change the .hex file that you are using to initialize the memory.
+ You only have to do 2 steps in Quartus: 
+ 1) Run 'Update Memory Initialization File' in the Processing menu. 
+ 2) Run 'Start Assembler' under 'Start' in the Processing menu. 
+ 
+ This will create a new SOF file using the new .HEX file.
