@@ -28,8 +28,6 @@ static void timer_isr(void *context)
 
 	// Increment tick counter
 	timer_tick_count++;
-
-	IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, (uint8_t)timer_tick_count);
 }
 
 // JTAG UART Interrupt Service Routine
@@ -53,11 +51,16 @@ static void jtag_uart_isr(void *context)
 }
 
 // Lightweight UART output functions (no printf overhead)
-void uart_putchar(char c)
+// Non-blocking version - returns 1 if character was sent, 0 if discarded
+int uart_putchar(char c)
 {
-	// Wait until there's space in the JTAG UART FIFO
-	while ((IORD_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE) & 0xFFFF0000) == 0);
-	IOWR_ALTERA_AVALON_JTAG_UART_DATA(JTAG_UART_0_BASE, c);
+	// Check if there's space in the JTAG UART FIFO (bits 31:16 = write space)
+	if ((IORD_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE) & 0xFFFF0000) != 0)
+	{
+		IOWR_ALTERA_AVALON_JTAG_UART_DATA(JTAG_UART_0_BASE, c);
+		return 1; // Character sent successfully
+	}
+	return 0; // No space available, character discarded
 }
 
 void uart_puts(const char *str)
@@ -151,6 +154,52 @@ int parse_int(const char *str, int *result)
 	return 0; // Failure
 }
 
+// Custom function to parse signed integer from string
+int parse_signed_int(const char *str, int16_t *result)
+{
+	int32_t value = 0;
+	int i = 0;
+	int digit_found = 0;
+	int is_negative = 0;
+
+	// Skip whitespace
+	while (str[i] == ' ' || str[i] == '\t')
+		i++;
+
+	// Check for sign
+	if (str[i] == '-')
+	{
+		is_negative = 1;
+		i++;
+	}
+	else if (str[i] == '+')
+	{
+		i++;
+	}
+
+	// Parse digits
+	while (isdigit(str[i]))
+	{
+		value = value * 10 + (str[i] - '0');
+		i++;
+		digit_found = 1;
+	}
+
+	if (digit_found)
+	{
+		if (is_negative)
+			value = -value;
+
+		// Check if value fits in 16-bit signed range
+		if (value >= -32768 && value <= 32767)
+		{
+			*result = (int16_t)value;
+			return 1; // Success
+		}
+	}
+	return 0; // Failure
+}
+
 // Non-blocking function to check if character is available from JTAG UART
 int alt_getchar_nonblocking(char *c)
 {
@@ -167,13 +216,22 @@ int alt_getchar_nonblocking(char *c)
 	return 0;
 }
 
-// Process console input for 'S<integer>' command using interrupt-driven input
+// Process console input for commands using interrupt-driven input
+// Commands:
+//   S<addr>$<value> - Set register at address (0-64) with signed 16-bit value
+//   R<addr>         - Read from register at address (0-64)
+//   T<interval>     - Set PIO timer interval
 void process_console_input(volatile uint32_t *delay_value)
 {
-	static char cmd_buffer[16];
+	static char cmd_buffer[32];
 	static int buffer_idx = 0;
 	char c;
+	int addr;
+	int16_t value_signed;
 	int value;
+	uint32_t read_value;
+	char *dollar_pos;
+	int i;
 
 	// Check if a character was received via interrupt
 	if (uart_rx_flag)
@@ -189,27 +247,113 @@ void process_console_input(volatile uint32_t *delay_value)
 
 			cmd_buffer[buffer_idx] = '\0';
 
-			// Parse command
-			if (buffer_idx > 0 && (cmd_buffer[0] == 'S' || cmd_buffer[0] == 's'))
+			// Parse command based on first character
+			if (buffer_idx > 0)
 			{
-				// Use custom function to extract integer value after 'S'
-				if (parse_int(&cmd_buffer[1], &value))
+				// S<addr>$<value> - Set register command
+				if (cmd_buffer[0] == 'S' || cmd_buffer[0] == 's')
 				{
-					if (value <= 5000 && value >= 100)
+					// Find the dollar sign separator
+					dollar_pos = NULL;
+					for (i = 1; i < buffer_idx; i++)
 					{
-						*delay_value = value;
-						uart_puts("Delay value set to: ");
-						uart_put_int(value);
-						uart_puts("\n");
+						if (cmd_buffer[i] == '$')
+						{
+							dollar_pos = &cmd_buffer[i];
+							break;
+						}
+					}
+
+					if (dollar_pos != NULL)
+					{
+						// Parse address (between 'S' and '$')
+						*dollar_pos = '\0'; // Temporarily null-terminate
+						if (parse_int(&cmd_buffer[1], &addr))
+						{
+							if (addr >= 0 && addr <= 64)
+							{
+								// Parse signed value (after '$')
+								if (parse_signed_int(dollar_pos + 1, &value_signed))
+								{
+									// Write to MM bridge at calculated address
+									IOWR_32DIRECT(MM_BRIDGE_0_BASE, addr * 4, (uint32_t)value_signed);
+									uart_puts("Set reg[");
+									uart_put_int(addr);
+									uart_puts("] = ");
+									uart_put_int((int)value_signed);
+									uart_puts("\n");
+								}
+								else
+								{
+									uart_puts("Invalid value (must be signed 16-bit: -32768 to 32767).\n");
+								}
+							}
+							else
+							{
+								uart_puts("Address out of range (0-64).\n");
+							}
+						}
+						else
+						{
+							uart_puts("Invalid address.\n");
+						}
 					}
 					else
 					{
-						uart_puts("Value out of range (100 - 5000).\n");
+						uart_puts("Invalid format. Use S<addr>$<value>\n");
+					}
+				}
+				// R<addr> - Read register command
+				else if (cmd_buffer[0] == 'R' || cmd_buffer[0] == 'r')
+				{
+					if (parse_int(&cmd_buffer[1], &addr))
+					{
+						if (addr >= 0 && addr <= 64)
+						{
+							// Read from MM bridge at calculated address
+							read_value = IORD_32DIRECT(MM_BRIDGE_0_BASE, addr * 4);
+							uart_puts("Read reg[");
+							uart_put_int(addr);
+							uart_puts("] = ");
+							// Cast to int16_t first to get proper sign extension, then to int for display
+							uart_put_int((int)(int16_t)read_value);
+							uart_puts("\n");
+						}
+						else
+						{
+							uart_puts("Address out of range (0-64).\n");
+						}
+					}
+					else
+					{
+						uart_puts("Invalid address.\n");
+					}
+				}
+				// T<interval> - Set PIO timer interval
+				else if (cmd_buffer[0] == 'T' || cmd_buffer[0] == 't')
+				{
+					if (parse_int(&cmd_buffer[1], &value))
+					{
+						if (value <= 5000 && value >= 100)
+						{
+							*delay_value = value;
+							uart_puts("Timer interval set to: ");
+							uart_put_int(value);
+							uart_puts(" ms\n");
+						}
+						else
+						{
+							uart_puts("Value out of range (100-5000).\n");
+						}
+					}
+					else
+					{
+						uart_puts("Invalid integer value.\n");
 					}
 				}
 				else
 				{
-					uart_puts("Invalid integer value.\n");
+					uart_puts("Unknown command. Use S<addr>$<value>, R<addr>, or T<interval>\n");
 				}
 			}
 
@@ -231,7 +375,6 @@ int main()
 	uint8_t pio_state = 0;
 	volatile uint32_t delay_value = 1000; // Default delay value in ms (1 second)
 	volatile uint32_t last_tick = 0;
-	volatile uint32_t counter = 0;
 
 	// Register Timer interrupt handler
 	alt_ic_isr_register(TIMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
@@ -255,11 +398,6 @@ int main()
 	// Timer is configured to run continuously with period of 1ms
 	// (configured in Qsys as TIMER_0_PERIOD = 1ms)
 
-	// Configure and start the timer
-	// Set the period (this may already be set by Qsys, but it's good practice)
-	// IOWR_ALTERA_AVALON_TIMER_PERIODL(TIMER_0_BASE, (TIMER_0_FREQ / 1000) & 0xFFFF);
-	// IOWR_ALTERA_AVALON_TIMER_PERIODH(TIMER_0_BASE, ((TIMER_0_FREQ / 1000) >> 16) & 0xFFFF);
-
 	// Configure the control register: 
 	// - Enable interrupts (ITO bit)
 	// - Enable continuous mode (CONT bit)
@@ -269,10 +407,12 @@ int main()
 		ALTERA_AVALON_TIMER_CONTROL_CONT_MSK |
 		ALTERA_AVALON_TIMER_CONTROL_START_MSK);
 
-	uart_puts("\n*** PIO Toggle Timer with Console Control (Interrupt-driven) ***\n");
+	uart_puts("\n*** FIR FPGA Console ***\n");
 	uart_puts("Commands:\n");
-	uart_puts("  S<integer> - Set delay value in ms\n");
-	uart_puts("Current delay: ");
+	uart_puts("  S<addr>$<value> - Set register (addr: 0-64, value: signed 16-bit)\n");
+	uart_puts("  R<addr>         - Read register (addr: 0-64)\n");
+	uart_puts("  T<interval>     - Set timer interval in ms (100-5000)\n");
+	uart_puts("Current timer interval: ");
 	uart_put_int((int)delay_value);
 	uart_puts(" ms\n\n");
 
@@ -282,18 +422,13 @@ int main()
 		process_console_input(&delay_value);
 
 		// Check if enough timer ticks have elapsed
-		if ((timer_tick_count - last_tick) >= delay_value)
+		if (timer_tick_count  >= delay_value)
 		{
-			last_tick = timer_tick_count;
+			timer_tick_count = 0;
 
 			// Toggle PIO output bit 0
-			//pio_state ^= 0x01;
-			//IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, pio_state);
-
-			counter++;
-
-			// Write counter to MM bridge
-			IOWR_32DIRECT(MM_BRIDGE_0_BASE, 0x0, (counter & 0xFFFF));
+			pio_state ^= 0x01;
+			IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, pio_state);
 		}
 	}
 

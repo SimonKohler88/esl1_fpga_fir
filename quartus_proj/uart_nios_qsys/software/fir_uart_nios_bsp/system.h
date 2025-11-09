@@ -4,7 +4,7 @@
  * Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'uart_nios'
  * SOPC Builder design path: ../../uart_nios.sopcinfo
  *
- * Generated: Sun Nov 09 08:28:37 CET 2025
+ * Generated: Sun Nov 09 11:01:05 CET 2025
  */
 
 /*
@@ -207,11 +207,11 @@
 #define JTAG_UART_0_IRQ 1
 #define JTAG_UART_0_IRQ_INTERRUPT_CONTROLLER_ID 0
 #define JTAG_UART_0_NAME "/dev/jtag_uart_0"
-#define JTAG_UART_0_READ_DEPTH 64
+#define JTAG_UART_0_READ_DEPTH 256
 #define JTAG_UART_0_READ_THRESHOLD 8
 #define JTAG_UART_0_SPAN 8
 #define JTAG_UART_0_TYPE "altera_avalon_jtag_uart"
-#define JTAG_UART_0_WRITE_DEPTH 64
+#define JTAG_UART_0_WRITE_DEPTH 256
 #define JTAG_UART_0_WRITE_THRESHOLD 8
 
 
@@ -297,7 +297,7 @@
 #define SYSID_QSYS_0_IRQ_INTERRUPT_CONTROLLER_ID -1
 #define SYSID_QSYS_0_NAME "/dev/sysid_qsys_0"
 #define SYSID_QSYS_0_SPAN 8
-#define SYSID_QSYS_0_TIMESTAMP 1762673272
+#define SYSID_QSYS_0_TIMESTAMP 1762681316
 #define SYSID_QSYS_0_TYPE "altera_avalon_sysid_qsys"
 
 
