@@ -23,7 +23,7 @@ nul
 *.a
 *.mk
 *.x
-
+*.cf
 
 
 *.objdump
