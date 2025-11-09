@@ -2,19 +2,20 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+use work.FIR_types.all;
+
 entity uart is
     Port (
         clk     : in  STD_LOGIC;
         reset_n   : in  STD_LOGIC;
-        pio_data_out: out STD_LOGIC_VECTOR (7 downto 0)
+        pio_data_out: out STD_LOGIC_VECTOR (7 downto 0); -- debug and alive signals
+
+         -- Filter Koeffs von Simon via UART
+        FIR_Coeffs : out FIR_type_coeffs         -- 64 x 16bit 
     );
 end uart;
 
 architecture Behavioral of uart is
-
-    -- Buffer array type definition
-    constant  BUFFER_SIZE : integer := 256;
-    type buffer_array_t is array (0 to BUFFER_SIZE) of std_logic_vector(15 downto 0);
 
     component uart_nios is
         port (
@@ -54,7 +55,8 @@ architecture Behavioral of uart is
     signal pio_int      : std_logic_vector(7 downto 0);
 
     -- Buffer array signal
-    signal buffer_array : buffer_array_t;
+    --signal buffer_array : buffer_array_t;
+    signal coeff_array : FIR_type_coeffs;
 
 begin
 
@@ -82,7 +84,8 @@ begin
     av_mm_wait_req <= '0';
 
     -- test wise
-    pio_data_out <= pio_int(0) & buffer_array(0)(6 downto 0);
+    pio_data_out <= pio_int(0) & coeff_array(0)(6 downto 0);
+    FIR_Coeffs <= coeff_array;
 
     -- Memory-mapped buffer access process
     process(clk_out, reset_n)
@@ -90,7 +93,7 @@ begin
     begin
         if reset_n = '0' then
             -- Reset buffer array to zeros
-            buffer_array <= (others => (others => '0'));
+            coeff_array <= (others => (others => '0'));
             av_mm_rdata <= (others => '0');
             av_mm_rdata_valid <= '0';
         elsif rising_edge(clk_out) then
@@ -103,9 +106,9 @@ begin
 
             -- Handle write operations
             if av_mm_wr = '1' then
-                if addr_int <= BUFFER_SIZE-1 then
+                if addr_int <= FILTER_TAPS-1 then
                     -- Write to buffer (only lower 16 bits, ignore upper 16 bits)
-                    buffer_array(addr_int) <= av_mm_wdata(15 downto 0);
+                    coeff_array(addr_int) <= av_mm_wdata(15 downto 0);
                 end if;
                 -- If address out of range, ignore write (no action needed)
             end if;
@@ -113,9 +116,9 @@ begin
             -- Handle read operations
             if av_mm_rd = '1' then
                 av_mm_rdata_valid <= '1';
-                if addr_int <= BUFFER_SIZE-1 then
+                if addr_int <= FILTER_TAPS-1 then
                     -- Read from buffer (lower 16 bits, upper 16 bits = 0)
-                    av_mm_rdata(15 downto 0) <= buffer_array(addr_int);
+                    av_mm_rdata(15 downto 0) <= coeff_array(addr_int);
                     av_mm_rdata(31 downto 16) <= (others => '0');
                 else
                     -- Address out of range, return all zeros

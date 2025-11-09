@@ -4,6 +4,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.FIR_types.all;
+
 entity esl_fir_filter is
     port (
         -- Clock and buttons/switches
@@ -18,7 +20,17 @@ entity esl_fir_filter is
         HEX2     : out std_logic_vector(6 downto 0);
         HEX3     : out std_logic_vector(6 downto 0);
         HEX4     : out std_logic_vector(6 downto 0);
-        HEX5     : out std_logic_vector(6 downto 0)
+        HEX5     : out std_logic_vector(6 downto 0);
+
+        AUD_ADCDAT : in  std_logic;                         -- audio ADC data
+        AUD_DACDAT : out std_logic;                         -- audio DAC data
+        AUD_BCLK   : in  std_logic;                         -- audio bit clock
+        AUD_DACLRCK: in  std_logic;                          -- audio DAC LR clock
+        AUD_ADCLRCK: in  std_logic;                          -- audio ADC LR clock
+        AUD_XCK    : out std_logic;                          -- audio master clock
+
+        FPGA_I2C_SDAT : inout std_logic;                     -- I2C data line
+        FPGA_I2C_SCLK : out   std_logic                      -- I2C clock
     );
 end entity esl_fir_filter;
 
@@ -35,7 +47,8 @@ component uart is
     Port (
         clk     : in  STD_LOGIC;
         reset_n   : in  STD_LOGIC;
-        pio_data_out: out STD_LOGIC_VECTOR (7 downto 0)
+        pio_data_out: out STD_LOGIC_VECTOR (7 downto 0);
+        FIR_Coeffs : out FIR_type_coeffs         -- 64 x 16bit 
     );
 end component;
 
