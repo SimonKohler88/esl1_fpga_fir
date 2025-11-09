@@ -3,3 +3,5 @@ fir_uart_nios_bsp/drivers
 fir_uart_nios_bsp/.settings
 *.sym
 *.hex
+
+nul
