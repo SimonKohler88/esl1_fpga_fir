@@ -4,7 +4,7 @@
  * Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'uart_nios'
  * SOPC Builder design path: ../../uart_nios.sopcinfo
  *
- * Generated: Sun Nov 02 18:08:15 CET 2025
+ * Generated: Mon Nov 03 15:51:05 CET 2025
  */
 
 /*
@@ -66,7 +66,7 @@
  */
 
 #define ONCHIP_MEMORY2_0_REGION_BASE 0x20020
-#define ONCHIP_MEMORY2_0_REGION_SPAN 81887
+#define ONCHIP_MEMORY2_0_REGION_SPAN 102368
 #define RESET_REGION_BASE 0x20000
 #define RESET_REGION_SPAN 32
 

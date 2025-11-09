@@ -1,9 +1,7 @@
 
 module uart_nios (
 	clk_clk,
-	pio_0_external_connection_export,
-	pll_0_locked_export,
-	reset_reset_n,
+	clock_bridge_0_out_clk_clk,
 	mm_bridge_0_m0_waitrequest,
 	mm_bridge_0_m0_readdata,
 	mm_bridge_0_m0_readdatavalid,
@@ -14,12 +12,12 @@ module uart_nios (
 	mm_bridge_0_m0_read,
 	mm_bridge_0_m0_byteenable,
 	mm_bridge_0_m0_debugaccess,
-	clock_bridge_0_out_clk_clk);	
+	pio_0_external_connection_export,
+	pll_0_locked_export,
+	reset_reset_n);	
 
 	input		clk_clk;
-	output	[7:0]	pio_0_external_connection_export;
-	output		pll_0_locked_export;
-	input		reset_reset_n;
+	output		clock_bridge_0_out_clk_clk;
 	input		mm_bridge_0_m0_waitrequest;
 	input	[31:0]	mm_bridge_0_m0_readdata;
 	input		mm_bridge_0_m0_readdatavalid;
@@ -30,5 +28,7 @@ module uart_nios (
 	output		mm_bridge_0_m0_read;
 	output	[3:0]	mm_bridge_0_m0_byteenable;
 	output		mm_bridge_0_m0_debugaccess;
-	output		clock_bridge_0_out_clk_clk;
+	output	[7:0]	pio_0_external_connection_export;
+	output		pll_0_locked_export;
+	input		reset_reset_n;
 endmodule

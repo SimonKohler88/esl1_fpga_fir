@@ -2,8 +2,8 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>02.11.2025 21:26:49</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1762115209662</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>09.11.2025 09:37:27</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1762677447501</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>D:\GitHub\esl1_fpga_fir\quartus_proj\uart_nios_qsys\software\fir_uart_nios_bsp</BspGeneratedLocation>
         <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\uart_nios.sopcinfo</SopcDesignFile>
@@ -900,8 +900,8 @@
         </Setting>
         <MemoryMap>
                 <slaveDescriptor>onchip_memory2_0</slaveDescriptor>
-                <addressRange>0x00020000 - 0x00033FFE</addressRange>
-                <addressSpan>81919</addressSpan>
+                <addressRange>0x00020000 - 0x00038FFF</addressRange>
+                <addressSpan>102400</addressSpan>
                 <attributes>memory</attributes>
         </MemoryMap>
         <MemoryMap>
@@ -911,20 +911,26 @@
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
+                <slaveDescriptor>timer_0</slaveDescriptor>
+                <addressRange>0x00041400 - 0x0004141F</addressRange>
+                <addressSpan>32</addressSpan>
+                <attributes>timer</attributes>
+        </MemoryMap>
+        <MemoryMap>
                 <slaveDescriptor>pio_0</slaveDescriptor>
-                <addressRange>0x00041400 - 0x0004140F</addressRange>
+                <addressRange>0x00041420 - 0x0004142F</addressRange>
                 <addressSpan>16</addressSpan>
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
                 <slaveDescriptor>sysid_qsys_0</slaveDescriptor>
-                <addressRange>0x00041410 - 0x00041417</addressRange>
+                <addressRange>0x00041430 - 0x00041437</addressRange>
                 <addressSpan>8</addressSpan>
                 <attributes/>
         </MemoryMap>
         <MemoryMap>
                 <slaveDescriptor>jtag_uart_0</slaveDescriptor>
-                <addressRange>0x00041418 - 0x0004141F</addressRange>
+                <addressRange>0x00041438 - 0x0004143F</addressRange>
                 <addressSpan>8</addressSpan>
                 <attributes>printable</attributes>
         </MemoryMap>

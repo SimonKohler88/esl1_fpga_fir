@@ -82,7 +82,7 @@ begin
     av_mm_wait_req <= '0';
 
     -- test wise
-    pio_data_out <= buffer_array(0)(7 downto 0);
+    pio_data_out <= pio_int(0) & buffer_array(0)(6 downto 0);
 
     -- Memory-mapped buffer access process
     process(clk_out, reset_n)

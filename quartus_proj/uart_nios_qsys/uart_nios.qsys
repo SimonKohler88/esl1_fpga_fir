@@ -37,7 +37,7 @@
    {
       datum baseAddress
       {
-         value = "267288";
+         value = "267320";
          type = "String";
       }
    }
@@ -101,7 +101,7 @@
    {
       datum baseAddress
       {
-         value = "267264";
+         value = "267296";
          type = "String";
       }
    }
@@ -125,7 +125,23 @@
    {
       datum baseAddress
       {
-         value = "267280";
+         value = "267312";
+         type = "String";
+      }
+   }
+   element timer_0
+   {
+      datum _sortIndex
+      {
+         value = "9";
+         type = "int";
+      }
+   }
+   element timer_0.s1
+   {
+      datum baseAddress
+      {
+         value = "267264";
          type = "String";
       }
    }
@@ -225,8 +241,8 @@
    kind="altera_nios2_gen2"
    version="22.1"
    enabled="1">
-  <parameter name="AUTO_CLK_CLOCK_DOMAIN" value="3" />
-  <parameter name="AUTO_CLK_RESET_DOMAIN" value="3" />
+  <parameter name="AUTO_CLK_CLOCK_DOMAIN" value="4" />
+  <parameter name="AUTO_CLK_RESET_DOMAIN" value="4" />
   <parameter name="AUTO_DEVICE" value="5CSEMA5F31C6" />
   <parameter name="AUTO_DEVICE_SPEEDGRADE" value="6" />
   <parameter name="bht_ramBlockType" value="Automatic" />
@@ -244,7 +260,7 @@
   <parameter name="dataAddrWidth" value="19" />
   <parameter name="dataMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="dataMasterHighPerformanceMapParam" value="" />
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x20000' end='0x33FFF' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2_gen2_0.debug_mem_slave' start='0x40800' end='0x41000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='mm_bridge_0.s0' start='0x41000' end='0x41400' type='altera_avalon_mm_bridge.s0' /><slave name='pio_0.s1' start='0x41400' end='0x41410' type='altera_avalon_pio.s1' /><slave name='sysid_qsys_0.control_slave' start='0x41410' end='0x41418' type='altera_avalon_sysid_qsys.control_slave' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x41418' end='0x41420' type='altera_avalon_jtag_uart.avalon_jtag_slave' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x20000' end='0x39000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2_gen2_0.debug_mem_slave' start='0x40800' end='0x41000' type='altera_nios2_gen2.debug_mem_slave' /><slave name='mm_bridge_0.s0' start='0x41000' end='0x41400' type='altera_avalon_mm_bridge.s0' /><slave name='timer_0.s1' start='0x41400' end='0x41420' type='altera_avalon_timer.s1' /><slave name='pio_0.s1' start='0x41420' end='0x41430' type='altera_avalon_pio.s1' /><slave name='sysid_qsys_0.control_slave' start='0x41430' end='0x41438' type='altera_avalon_sysid_qsys.control_slave' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x41438' end='0x41440' type='altera_avalon_jtag_uart.avalon_jtag_slave' /></address-map>]]></parameter>
   <parameter name="data_master_high_performance_paddr_base" value="0" />
   <parameter name="data_master_high_performance_paddr_size" value="0" />
   <parameter name="data_master_paddr_base" value="0" />
@@ -283,14 +299,14 @@
   <parameter name="icache_tagramBlockType" value="Automatic" />
   <parameter name="impl" value="Fast" />
   <parameter name="instAddrWidth" value="19" />
-  <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x20000' end='0x33FFF' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2_gen2_0.debug_mem_slave' start='0x40800' end='0x41000' type='altera_nios2_gen2.debug_mem_slave' /></address-map>]]></parameter>
+  <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x20000' end='0x39000' type='altera_avalon_onchip_memory2.s1' /><slave name='nios2_gen2_0.debug_mem_slave' start='0x40800' end='0x41000' type='altera_nios2_gen2.debug_mem_slave' /></address-map>]]></parameter>
   <parameter name="instructionMasterHighPerformanceAddrWidth" value="1" />
   <parameter name="instructionMasterHighPerformanceMapParam" value="" />
   <parameter name="instruction_master_high_performance_paddr_base" value="0" />
   <parameter name="instruction_master_high_performance_paddr_size" value="0" />
   <parameter name="instruction_master_paddr_base" value="0" />
   <parameter name="instruction_master_paddr_size" value="0" />
-  <parameter name="internalIrqMaskSystemInfo" value="1" />
+  <parameter name="internalIrqMaskSystemInfo" value="3" />
   <parameter name="io_regionbase" value="0" />
   <parameter name="io_regionsize" value="0" />
   <parameter name="master_addr_map" value="false" />
@@ -408,7 +424,7 @@
    version="22.1"
    enabled="1">
   <parameter name="allowInSystemMemoryContentEditor" value="true" />
-  <parameter name="autoInitializationFileName">uart_nios_onchip_memory2_0</parameter>
+  <parameter name="autoInitializationFileName">$${FILENAME}_onchip_memory2_0</parameter>
   <parameter name="blockType" value="AUTO" />
   <parameter name="copyInitFile" value="false" />
   <parameter name="dataWidth" value="32" />
@@ -422,7 +438,7 @@
   <parameter name="initMemContent" value="true" />
   <parameter name="initializationFileName">D:/GitHub/esl1_fpga_fir/quartus_proj/uart_nios_qsys/software/fir_uart_nios/mem_init/uart_nios_onchip_memory2_0.hex</parameter>
   <parameter name="instanceID" value="NONE" />
-  <parameter name="memorySize" value="81919" />
+  <parameter name="memorySize" value="102400" />
   <parameter name="readDuringWriteMode" value="DONT_CARE" />
   <parameter name="resetrequest_enabled" value="true" />
   <parameter name="simAllowMRAMContentsFile" value="false" />
@@ -658,13 +674,25 @@
    enabled="1">
   <parameter name="id" value="66" />
  </module>
+ <module name="timer_0" kind="altera_avalon_timer" version="22.1" enabled="1">
+  <parameter name="alwaysRun" value="true" />
+  <parameter name="counterSize" value="32" />
+  <parameter name="fixedPeriod" value="true" />
+  <parameter name="period" value="1" />
+  <parameter name="periodUnits" value="MSEC" />
+  <parameter name="resetOutput" value="false" />
+  <parameter name="snapshot" value="false" />
+  <parameter name="systemFrequency" value="120000000" />
+  <parameter name="timeoutPulseOutput" value="false" />
+  <parameter name="watchdogPulse" value="2" />
+ </module>
  <connection
    kind="avalon"
    version="22.1"
    start="nios2_gen2_0.data_master"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00041418" />
+  <parameter name="baseAddress" value="0x00041438" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -673,7 +701,7 @@
    start="nios2_gen2_0.data_master"
    end="sysid_qsys_0.control_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00041410" />
+  <parameter name="baseAddress" value="0x00041430" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -708,6 +736,15 @@
    version="22.1"
    start="nios2_gen2_0.data_master"
    end="pio_0.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00041420" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
+ <connection
+   kind="avalon"
+   version="22.1"
+   start="nios2_gen2_0.data_master"
+   end="timer_0.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x00041400" />
   <parameter name="defaultConnection" value="false" />
@@ -752,6 +789,7 @@
    version="22.1"
    start="pll_0.outclk0"
    end="sysid_qsys_0.clk" />
+ <connection kind="clock" version="22.1" start="pll_0.outclk0" end="timer_0.clk" />
  <connection
    kind="clock"
    version="22.1"
@@ -766,8 +804,15 @@
    kind="interrupt"
    version="22.1"
    start="nios2_gen2_0.irq"
-   end="jtag_uart_0.irq">
+   end="timer_0.irq">
   <parameter name="irqNumber" value="0" />
+ </connection>
+ <connection
+   kind="interrupt"
+   version="22.1"
+   start="nios2_gen2_0.irq"
+   end="jtag_uart_0.irq">
+  <parameter name="irqNumber" value="1" />
  </connection>
  <connection
    kind="reset"
@@ -791,6 +836,11 @@
    version="22.1"
    start="clk_0.clk_reset"
    end="sysid_qsys_0.reset" />
+ <connection
+   kind="reset"
+   version="22.1"
+   start="clk_0.clk_reset"
+   end="timer_0.reset" />
  <connection
    kind="reset"
    version="22.1"

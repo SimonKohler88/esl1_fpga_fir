@@ -3,7 +3,7 @@
 # Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'uart_nios'
 # SOPC Builder design path: ../../uart_nios.sopcinfo
 #
-# Generated: Sun Nov 02 18:08:15 CET 2025
+# Generated: Mon Nov 03 15:51:05 CET 2025
 
 # DO NOT MODIFY THIS FILE
 #
@@ -47,4 +47,4 @@
 # by allowing GDB to cache memory contents on the host.
 
 # onchip_memory2_0
-memory 0x20000 0x33fff cache
+memory 0x20000 0x39000 cache
