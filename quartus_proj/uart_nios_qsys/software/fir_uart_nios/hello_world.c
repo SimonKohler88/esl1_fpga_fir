@@ -15,6 +15,29 @@
 #include "altera_avalon_jtag_uart_regs.h"
 #include "altera_avalon_timer_regs.h"
 
+// initial preload array
+// 500Hz Blackman LPF coefficients
+// Original 60 VHDL entries with 2 zeros added at beginning and 2 at end
+const int16_t fir_coefficients[64] = {
+    0x0000, 0x0000,  
+    0x0000, 0x0001, 0x0005, 0x000C,
+    0x0016, 0x0025, 0x0037, 0x004E,
+    0x0069, 0x008B, 0x00B2, 0x00E0,
+    0x0114, 0x014E, 0x018E, 0x01D3,
+    0x021D, 0x026A, 0x02BA, 0x030B,
+    0x035B, 0x03AA, 0x03F5, 0x043B,
+    0x047B, 0x04B2, 0x04E0, 0x0504,
+    0x051C, 0x0528, 0x0528, 0x051C,
+    0x0504, 0x04E0, 0x04B2, 0x047B,
+    0x043B, 0x03F5, 0x03AA, 0x035B,
+    0x030B, 0x02BA, 0x026A, 0x021D,
+    0x01D3, 0x018E, 0x014E, 0x0114,
+    0x00E0, 0x00B2, 0x008B, 0x0069,
+    0x004E, 0x0037, 0x0025, 0x0016,
+    0x000C, 0x0005, 0x0001, 0x0000,
+    0x0000, 0x0000   
+};
+
 // Global variables for interrupt handling
 volatile uint32_t timer_tick_count = 0;
 volatile uint8_t uart_rx_flag = 0;
@@ -406,6 +429,13 @@ int main()
 		ALTERA_AVALON_TIMER_CONTROL_ITO_MSK |
 		ALTERA_AVALON_TIMER_CONTROL_CONT_MSK |
 		ALTERA_AVALON_TIMER_CONTROL_START_MSK);
+
+	
+	// Preload FIR coefficients into MM bridge registers
+	for (int i = 0; i < 64; i++)
+	{
+		IOWR_32DIRECT(MM_BRIDGE_0_BASE, i * 4, (uint32_t)fir_coefficients[i]);
+	}
 
 	uart_puts("\n*** FIR FPGA Console ***\n");
 	uart_puts("Commands:\n");
