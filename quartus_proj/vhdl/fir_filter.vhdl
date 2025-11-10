@@ -12,9 +12,9 @@ port (
     -- Avalon Stream AUDIO in und out von Benedikt.
     Av_S_AUDIO_IN: in std_logic_vector(15 downto 0);
     Av_S_AUDIO_IN_valid: in std_logic;
-    Av_S_AUDIO_IN_ready: out std_logic;
+    Av_S_AUDIO_IN_ready: out std_logic := '0';
 
-    Av_S_AUDIO_OUT: out  std_logic_vector(15 downto 0);
+    Av_S_AUDIO_OUT: out  std_logic_vector(15 downto 0) := "0000000000000000";
     Av_S_AUDIO_OUT_valid: out std_logic;
     Av_S_AUDIO_OUT_ready: in std_logic;
 
@@ -37,7 +37,7 @@ architecture FIR_Filter_Arch of FIR_Filter is
     signal fsclk_q : std_logic := '0';
     signal fsclk : std_logic := '0';
 
-    type state_machine is (idle_st, active_st);
+    type state_machine is (idle_st, active_st, ready_out_st);
     signal state : state_machine := idle_st;
 
     signal counter : integer range 0 to FILTER_TAPS-1 := FILTER_TAPS-1;
@@ -45,10 +45,11 @@ architecture FIR_Filter_Arch of FIR_Filter is
     signal output       : signed(INPUT_WIDTH+COEFF_WIDTH-1 downto 0) := (others=>'0');
     signal accumulator  : signed(INPUT_WIDTH+COEFF_WIDTH-1 downto 0) := (others=>'0');
 
-    signal data_o : std_logic_vector(15 downto 0);
     signal data_i : std_logic_vector(15 downto 0);
 
     signal valid_out: std_logic;
+
+    signal debug: std_ulogic:='0';
 
 begin
     fsclk <= Av_S_AUDIO_IN_valid;
@@ -67,6 +68,9 @@ begin
         when idle_st =>
             if fsclk = '1' and fsclk_q = '0' then
                 state <= active_st;
+                Av_S_AUDIO_IN_ready <= '0';
+            else
+                Av_S_AUDIO_IN_ready <= '1';
             end if;
 
         when active_st =>
@@ -75,13 +79,15 @@ begin
                 counter <= counter - 1;
             else
                 counter <= FILTER_TAPS-1;
-                state <= idle_st;
+                state <= ready_out_st;
             end if;
 
             -- Delay line shifting
             if counter > 0 then
+                debug <= '0';
                 delay_line_s(counter) <= delay_line_s(counter-1);
             else
+                debug <= '1';
                 delay_line_s(counter) <= signed(data_i);
             end if;
 
@@ -90,19 +96,35 @@ begin
                 sum_v := delay_line_s(counter) * signed( FIR_Coeffs(counter) );
                 accumulator <= accumulator + sum_v;
             else
-                accumulator <= (others=>'0');
                 sum_v := delay_line_s(counter) * signed( FIR_Coeffs(counter) );
                 output <= accumulator + sum_v;
+                accumulator <= (others=>'0');
             end if;
 
-
+        when ready_out_st =>
+            if Av_S_AUDIO_OUT_ready='1' and valid_out='0' then
+                state <= idle_st;
+                valid_out <= '1';
+            else
+                valid_out <= '0';
+            end if;
         end case;
+
+
         if counter=0 and state=active_st then
-            valid_out <= '1';
-            data_o <= std_logic_vector(signed(output(INPUT_WIDTH+COEFF_WIDTH-2 downto INPUT_WIDTH+COEFF_WIDTH-OUTPUT_WIDTH-1)));
+            Av_S_AUDIO_OUT <= std_logic_vector(
+                signed(
+                    output(
+                        INPUT_WIDTH + COEFF_WIDTH - 2 downto INPUT_WIDTH + COEFF_WIDTH - OUTPUT_WIDTH - 1
+                    )
+                )
+            );
         else
-            valid_out <= '0';
-            data_o <= (others=>'0');
+            if state=ready_out_st then
+                valid_out <= '1';
+            else
+                valid_out <= '0';
+            end if;
         end if;
     end if;
 
