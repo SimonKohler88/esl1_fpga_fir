@@ -397,7 +397,6 @@ int main()
 {
 	uint8_t pio_state = 0;
 	volatile uint32_t delay_value = 1000; // Default delay value in ms (1 second)
-	volatile uint32_t last_tick = 0;
 
 	// Register Timer interrupt handler
 	alt_ic_isr_register(TIMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
