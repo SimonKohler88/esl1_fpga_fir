@@ -24,9 +24,9 @@ entity esl_fir_filter is
 
         AUD_ADCDAT : in  std_logic;                         -- audio ADC data
         AUD_DACDAT : out std_logic;                         -- audio DAC data
-        AUD_BCLK   : in  std_logic;                         -- audio bit clock
-        AUD_DACLRCK: in  std_logic;                          -- audio DAC LR clock
-        AUD_ADCLRCK: in  std_logic;                          -- audio ADC LR clock
+        AUD_BCLK   : out  std_logic;                         -- audio bit clock
+        AUD_DACLRCK: out  std_logic;                          -- audio DAC LR clock
+        AUD_ADCLRCK: out  std_logic;                          -- audio ADC LR clock
         AUD_XCK    : out std_logic;                          -- audio master clock
 
         FPGA_I2C_SDAT : inout std_logic;                     -- I2C data line
@@ -42,6 +42,7 @@ architecture rtl of esl_fir_filter is
     signal blink_counter : unsigned(24 downto 0) := (others => '0'); -- 25 bits -> covers 25,000,000
     signal alive         : std_logic := '0';
     constant HALF_PERIOD : integer := 25000000; -- CLOCK_50 / 2 for 1 Hz toggle
+    signal nios_pio_data : std_logic_vector(7 downto 0);
 
 component uart is
     Port (
@@ -52,23 +53,138 @@ component uart is
     );
 end component;
 
-    signal nios_pio_data : std_logic_vector(7 downto 0);
+component FIR_Filter is
+port (
+    clk : in std_logic;     -- 50 MHz
+    rst :in std_logic;
+
+    -- Avalon Stream AUDIO in und out von Benedikt.
+    Av_S_AUDIO_IN: in std_logic_vector(15 downto 0);
+    Av_S_AUDIO_IN_valid: in std_logic;
+    Av_S_AUDIO_IN_ready: out std_logic;
+
+    Av_S_AUDIO_OUT: out  std_logic_vector(15 downto 0);
+    Av_S_AUDIO_OUT_valid: out std_logic;
+    Av_S_AUDIO_OUT_ready: in std_logic;
+
+    -- Filter Koeffs von Simon via UART
+    FIR_Coeffs : in FIR_type_coeffs         -- 64 x 16bit 
+);
+end component;
+    signal FIR_Coeffs : FIR_type_coeffs;
+    signal sig_AVS_audio_in : std_logic_vector(15 downto 0);
+    signal sig_AVS_audio_in_valid : std_logic;
+    signal sig_AVS_audio_in_ready : std_logic;
+    signal sig_AVS_audio_out : std_logic_vector(15 downto 0);
+    signal sig_AVS_audio_out_valid : std_logic;
+    signal sig_AVS_audio_out_ready : std_logic;
+
+component  codec_top is
+port (
+    --------------------------------------------------------------------
+    -- System
+    --------------------------------------------------------------------
+    --! 50 MHz reference system clock.
+    clk_50 : in std_logic;
+
+    --! Global active-low reset.
+    rst_n : in std_logic;
+
+    --------------------------------------------------------------------
+    -- I²C control (codec configuration)
+    --------------------------------------------------------------------
+    --! I²C serial clock to WM8731 codec.
+    I2C_CLCK : out std_logic;
+
+    --! I²C bidirectional serial data line to WM8731 codec.
+    I2C_DATA : inout std_logic;
+
+    --------------------------------------------------------------------
+    -- Codec interface (I²S audio signals)
+    --------------------------------------------------------------------
+    --! Serial audio data input from ADC (I²S SDIN).
+    ADC_DAT : in std_logic;
+
+    --! Serial audio data output to DAC (I²S SDOUT).
+    DAC_DAT : out std_logic;
+
+    --! Left/right channel select for ADC (48 kHz frame sync).
+    ADC_LR_SEL : out std_logic;
+
+    --! Left/right channel select for DAC (48 kHz frame sync).
+    DAC_LR_SEL : out std_logic;
+
+    --! I²S bit clock (1.536 MHz, 32 bits per channel at 48 kHz).
+    BCLCK : out std_logic;
+
+    --! Master clock to WM8731 (18.432 MHz).
+    XCK : out std_logic;
+
+    --------------------------------------------------------------------
+    -- FIR stream interface (mono, Avalon-ST)
+    --------------------------------------------------------------------
+    --! FIR output sample toward DAC (16-bit).
+    Av_S_AUDIO_OUT : in std_logic_vector(15 downto 0);
+
+    --! FIR output sample valid flag.
+    Av_S_AUDIO_OUT_valid : in std_logic;
+
+    --! FIR output ready signal (requests next sample each 48 kHz frame).
+    Av_S_AUDIO_OUT_ready : out std_logic;
+
+    --! ADC input sample toward FIR (16-bit).
+    Av_S_AUDIO_IN : out std_logic_vector(15 downto 0);
+
+    --! ADC input sample valid flag.
+    Av_S_AUDIO_IN_valid : out std_logic;
+
+    --! FIR ready signal for new ADC sample.
+    Av_S_AUDIO_IN_ready : in std_logic
+);
+end component;
+
 begin
     reset_n <= KEY(0);
 
     u0: uart
         port map (
-            clk => CLOCK_50,
-            reset_n => reset_n,
-            pio_data_out => nios_pio_data
-        );
+        clk => CLOCK_50,
+        reset_n => reset_n,
+        pio_data_out => nios_pio_data
+    );
 
-    ----------------------------------------------------------------
-    -- Placeholder top-level connections:
-    -- - Connect switches directly to LEDs for basic board sanity.
-    -- - Blank HEX displays; replace these with your FIR filter
-    --   result visualization and control logic.
-    ----------------------------------------------------------------
+    f0 : FIR_Filter
+        port map (
+        clk => CLOCK_50,
+        rst => not reset_n,
+        Av_S_AUDIO_IN => sig_AVS_audio_in,
+        Av_S_AUDIO_IN_valid => sig_AVS_audio_in_valid,
+        Av_S_AUDIO_IN_ready => sig_AVS_audio_in_ready,
+        Av_S_AUDIO_OUT => sig_AVS_audio_out,
+        Av_S_AUDIO_OUT_valid => sig_AVS_audio_out_valid,
+        Av_S_AUDIO_OUT_ready => sig_AVS_audio_out_ready,
+        FIR_Coeffs => FIR_Coeffs
+    );
+
+    codec0 : codec_top
+        port map (
+        clk_50 => CLOCK_50,
+        rst_n => reset_n,
+        I2C_CLCK => FPGA_I2C_SCLK,
+        I2C_DATA => FPGA_I2C_SDAT,
+        ADC_DAT => AUD_ADCDAT,
+        DAC_DAT => AUD_DACDAT,
+        ADC_LR_SEL => AUD_ADCLRCK,
+        DAC_LR_SEL => AUD_DACLRCK,
+        BCLCK => AUD_BCLK,
+        XCK => AUD_XCK,
+        Av_S_AUDIO_OUT => sig_AVS_audio_out,
+        Av_S_AUDIO_OUT_valid => sig_AVS_audio_out_valid,
+        Av_S_AUDIO_OUT_ready => sig_AVS_audio_out_ready,
+        Av_S_AUDIO_IN => sig_AVS_audio_in,
+        Av_S_AUDIO_IN_valid => sig_AVS_audio_in_valid,
+        Av_S_AUDIO_IN_ready => sig_AVS_audio_in_ready
+    );
     
 
     -- Blank HEX (all segments off = '1' on common-anode wiring used on DE1-SoC)
@@ -80,7 +196,7 @@ begin
     HEX5 <= (others => '1');
 
     
-
+    -- Im alive blinky
     blink_proc : process(all)
     begin
         if rising_edge(CLOCK_50) then
