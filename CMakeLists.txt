@@ -81,8 +81,8 @@ foreach(tb ${VHDL_TESTBENCHES})
 
     # Simulation
     add_custom_target(ghdl_run_${tb_name}
-            COMMAND ghdl -r ${GHDL_FLAGS} ${tb_name} --vcd=${tb_name}.vcd
-            COMMAND gtkwave ${tb_name}.vcd
+            COMMAND ghdl -r ${GHDL_FLAGS} ${tb_name} --wave=${tb_name}.ghw
+            COMMAND gtkwave ${tb_name}.ghw wave_settings.gtkw
             DEPENDS ghdl_elab_${tb_name}
             WORKING_DIRECTORY ${VHDL_DIR}
             COMMENT "Simuliere Testbench ${tb_name} und erzeuge ${tb_name}.vcd"
