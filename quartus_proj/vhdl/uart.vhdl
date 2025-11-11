@@ -105,7 +105,7 @@ begin
             av_mm_rdata_valid <= '0';
         elsif rising_edge(clk_out) then
             -- Convert address to integer
-            addr_int := to_integer(unsigned(av_mm_addr));
+            addr_int := to_integer(unsigned(av_mm_addr(9 downto 2)));
 
             -- Default: no valid read data
             av_mm_rdata_valid <= '0';

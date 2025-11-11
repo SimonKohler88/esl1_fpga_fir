@@ -58,6 +58,10 @@ class BasicQtApp(QMainWindow):
         self.current_address = 0  # Track current address being read
         self.waiting_for_response = False  # Flag to track if waiting for response
         self.reading_mode = False  # Flag to indicate we're in reading mode
+        self.response_buffer = ""  # Buffer to accumulate serial data
+        self.response_timeout_timer = None  # Timer for response timeout
+        self.max_retries = 3  # Maximum retry attempts per address
+        self.retry_count = 0  # Current retry count
         self.init_ui()
 
     def init_ui(self):
@@ -226,6 +230,12 @@ class BasicQtApp(QMainWindow):
         if self.serial_port and self.serial_port.is_open:
             self.log_to_console("Disconnecting from serial port...")
 
+            # Stop any active reading operations
+            self.reading_mode = False
+            if self.response_timeout_timer:
+                self.response_timeout_timer.stop()
+                self.response_timeout_timer = None
+
             # Stop reader thread
             if self.reader_thread:
                 self.reader_thread.stop()
@@ -246,7 +256,9 @@ class BasicQtApp(QMainWindow):
 
         # Parse read responses if in reading mode
         if self.reading_mode and self.waiting_for_response:
-            self.parse_read_response(text)
+            # Accumulate text in response buffer
+            self.response_buffer += text
+            self.parse_read_response()
 
     def on_write_clicked(self):
         """Handle write button click"""
@@ -264,6 +276,8 @@ class BasicQtApp(QMainWindow):
         self.read_values = []
         self.current_address = 0
         self.reading_mode = True
+        self.response_buffer = ""
+        self.retry_count = 0
 
         # Send first read command
         self.send_read_command()
@@ -273,43 +287,78 @@ class BasicQtApp(QMainWindow):
         if self.current_address < 64:
             command = f"R{self.current_address}"
             try:
+                # Clear the response buffer before sending command
+                self.response_buffer = ""
+
                 self.serial_port.write(f"{command}\n".encode('utf-8'))
                 self.log_to_console(f"> {command}")
                 self.waiting_for_response = True
+
+                # Start timeout timer (1000ms timeout)
+                if self.response_timeout_timer:
+                    self.response_timeout_timer.stop()
+                self.response_timeout_timer = QTimer()
+                self.response_timeout_timer.setSingleShot(True)
+                self.response_timeout_timer.timeout.connect(self.handle_response_timeout)
+                self.response_timeout_timer.start(1000)
+
             except Exception as e:
                 self.log_to_console(f"Error sending read command: {str(e)}")
                 self.reading_mode = False
         else:
             # All addresses read, plot the results
             self.reading_mode = False
-            self.log_to_console("All addresses read successfully")
+            self.log_to_console(f"All 64 addresses read successfully ({len(self.read_values)} values collected)")
             self.plot_read_values()
 
-    def parse_read_response(self, text):
-        """Parse response from read commands"""
+    def handle_response_timeout(self):
+        """Handle timeout when waiting for read response"""
+        if self.waiting_for_response and self.reading_mode:
+            self.retry_count += 1
+            if self.retry_count <= self.max_retries:
+                self.log_to_console(f"Timeout waiting for address {self.current_address} (retry {self.retry_count}/{self.max_retries})")
+                self.waiting_for_response = False
+                # Retry the same command
+                QTimer.singleShot(50, self.send_read_command)
+            else:
+                # Max retries reached, skip this address and continue
+                self.log_to_console(f"Error: Max retries reached for address {self.current_address}, skipping...")
+                self.read_values.append(0)  # Add placeholder value
+                self.current_address += 1
+                self.retry_count = 0
+                self.waiting_for_response = False
+                QTimer.singleShot(50, self.send_read_command)
+
+    def parse_read_response(self):
+        """Parse response from read commands using accumulated buffer"""
         # Response format: "Read reg[addr] = value"
-        lines = text.strip().split('\n')
-        for line in lines:
-            # Look for pattern: Read reg[number] = number
-            import re
-            match = re.search(r'Read reg\[(\d+)\]\s*=\s*(-?\d+)', line)
-            if match:
-                addr = int(match.group(1))
-                value = int(match.group(2))
+        import re
 
-                # Verify it's the address we expected
-                if addr == self.current_address:
-                    self.read_values.append(value)
-                    self.log_to_console(f"Address {addr}: {value}")
+        # Look for pattern in the accumulated buffer
+        match = re.search(r'Read reg\[(\d+)\]\s*=\s*(-?\d+)', self.response_buffer)
+        if match:
+            addr = int(match.group(1))
+            value = int(match.group(2))
 
-                    # Move to next address
-                    self.current_address += 1
-                    self.waiting_for_response = False
+            # Verify it's the address we expected
+            if addr == self.current_address:
+                # Stop timeout timer
+                if self.response_timeout_timer:
+                    self.response_timeout_timer.stop()
 
-                    # Send next command after brief delay (10ms)
-                    QTimer.singleShot(10, self.send_read_command)
-                else:
-                    self.log_to_console(f"Warning: Received address {addr}, expected {self.current_address}")
+                self.read_values.append(value)
+                # Don't log each value to avoid console spam
+                # self.log_to_console(f"Address {addr}: {value}")
+
+                # Move to next address
+                self.current_address += 1
+                self.retry_count = 0  # Reset retry count on success
+                self.waiting_for_response = False
+
+                # Send next command after brief delay (50ms for better reliability)
+                QTimer.singleShot(50, self.send_read_command)
+            else:
+                self.log_to_console(f"Warning: Received address {addr}, expected {self.current_address}")
 
     def plot_read_values(self):
         """Plot the values read from all 64 addresses"""
@@ -364,6 +413,12 @@ class BasicQtApp(QMainWindow):
 
     def closeEvent(self, event):
         """Handle window close event"""
+        # Stop any active reading operations
+        self.reading_mode = False
+        if self.response_timeout_timer:
+            self.response_timeout_timer.stop()
+            self.response_timeout_timer = None
+
         # Clean up serial connection
         if self.reader_thread:
             self.reader_thread.stop()
