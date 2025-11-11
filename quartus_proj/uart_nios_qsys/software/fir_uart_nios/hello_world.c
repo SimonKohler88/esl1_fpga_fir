@@ -299,7 +299,7 @@ void process_console_input(volatile uint32_t *delay_value)
 								if (parse_signed_int(dollar_pos + 1, &value_signed))
 								{
 									// Write to MM bridge at calculated address
-									IOWR_32DIRECT(MM_BRIDGE_0_BASE, addr * 4, (uint32_t)value_signed);
+									IOWR_32DIRECT(MM_BRIDGE_0_BASE, addr, (uint32_t)value_signed);
 									uart_puts("Set reg[");
 									uart_put_int(addr);
 									uart_puts("] = ");
@@ -334,7 +334,7 @@ void process_console_input(volatile uint32_t *delay_value)
 						if (addr >= 0 && addr <= 64)
 						{
 							// Read from MM bridge at calculated address
-							read_value = IORD_32DIRECT(MM_BRIDGE_0_BASE, addr * 4);
+							read_value = IORD_32DIRECT(MM_BRIDGE_0_BASE, addr);
 							uart_puts("Read reg[");
 							uart_put_int(addr);
 							uart_puts("] = ");
@@ -433,7 +433,7 @@ int main()
 	// Preload FIR coefficients into MM bridge registers
 	for (int i = 0; i < 64; i++)
 	{
-		IOWR_32DIRECT(MM_BRIDGE_0_BASE, i * 4, (uint32_t)fir_coefficients[i]);
+		IOWR_32DIRECT(MM_BRIDGE_0_BASE, i, (uint32_t)fir_coefficients[i]);
 	}
 
 	uart_puts("\n*** FIR FPGA Console ***\n");

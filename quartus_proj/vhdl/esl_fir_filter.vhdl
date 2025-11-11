@@ -150,7 +150,8 @@ begin
         port map (
         clk => CLOCK_50,
         reset_n => reset_n,
-        pio_data_out => nios_pio_data
+        pio_data_out => nios_pio_data,
+        FIR_Coeffs => FIR_Coeffs
     );
 
     f0 : FIR_Filter
