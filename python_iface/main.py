@@ -1,14 +1,16 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QHBoxLayout, QPushButton, QLabel, QTextEdit, QLineEdit
+    QHBoxLayout, QPushButton, QLabel, QTextEdit, QLineEdit, QComboBox
 )
-from PyQt5.QtCore import Qt, QProcess, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import numpy as np
+import serial
+import serial.tools.list_ports
 
 """
 Commands:
@@ -20,10 +22,38 @@ Commands must be sent with enter
 """
 
 
+class SerialReaderThread(QThread):
+    """Thread for reading from serial port"""
+    data_received = pyqtSignal(str)
+
+    def __init__(self, serial_port):
+        super().__init__()
+        self.serial_port = serial_port
+        self.running = True
+
+    def run(self):
+        """Continuously read from serial port"""
+        while self.running and self.serial_port and self.serial_port.is_open:
+            try:
+                if self.serial_port.in_waiting > 0:
+                    data = self.serial_port.read(self.serial_port.in_waiting)
+                    text = data.decode('utf-8', errors='ignore')
+                    self.data_received.emit(text)
+            except Exception as e:
+                self.data_received.emit(f"Error reading: {str(e)}")
+                break
+            self.msleep(10)  # Small delay to prevent CPU overuse
+
+    def stop(self):
+        """Stop the thread"""
+        self.running = False
+
+
 class BasicQtApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.process = None
+        self.serial_port = None
+        self.reader_thread = None
         self.read_values = []  # Store read values
         self.current_address = 0  # Track current address being read
         self.waiting_for_response = False  # Flag to track if waiting for response
@@ -32,7 +62,7 @@ class BasicQtApp(QMainWindow):
 
     def init_ui(self):
         """Initialize the user interface"""
-        self.setWindowTitle("Basic PyQt6 Application")
+        self.setWindowTitle("Serial UART Communication")
         self.setGeometry(100, 100, 800, 600)
 
         # Create central widget and main layout
@@ -51,8 +81,31 @@ class BasicQtApp(QMainWindow):
         # Bottom section with buttons and console
         bottom_layout = QHBoxLayout()
 
-        # Left side: Buttons
+        # Left side: Buttons and COM port selection
         button_layout = QVBoxLayout()
+
+        # COM port selection
+        port_layout = QHBoxLayout()
+        port_label = QLabel("COM Port:")
+        self.port_combo = QComboBox()
+        self.refresh_ports()
+        refresh_port_btn = QPushButton("⟳")
+        refresh_port_btn.setMaximumWidth(40)
+        refresh_port_btn.clicked.connect(self.refresh_ports)
+        port_layout.addWidget(port_label)
+        port_layout.addWidget(self.port_combo)
+        port_layout.addWidget(refresh_port_btn)
+        button_layout.addLayout(port_layout)
+
+        # Baud rate selection
+        baud_layout = QHBoxLayout()
+        baud_label = QLabel("Baud Rate:")
+        self.baud_combo = QComboBox()
+        self.baud_combo.addItems(['9600', '19200', '38400', '57600', '115200', '230400', '460800', '921600'])
+        self.baud_combo.setCurrentText('115200')
+        baud_layout.addWidget(baud_label)
+        baud_layout.addWidget(self.baud_combo)
+        button_layout.addLayout(baud_layout)
 
         connect_btn = QPushButton("Connect")
         connect_btn.clicked.connect(self.on_connect_clicked)
@@ -106,76 +159,94 @@ class BasicQtApp(QMainWindow):
 
         main_layout.addLayout(top_button_layout)
 
+    def refresh_ports(self):
+        """Refresh available COM ports"""
+        self.port_combo.clear()
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            self.port_combo.addItem(f"{port.device} - {port.description}", port.device)
+
+        if self.port_combo.count() == 0:
+            self.port_combo.addItem("No ports found")
+
     def log_to_console(self, message):
         """Helper method to log messages to console"""
         self.console.append(message)
 
     def send_command(self):
-        """Send command from input field to the process"""
+        """Send command from input field to the serial port"""
         command = self.command_input.text()
-        if command and self.process and self.process.state() == QProcess.Running:
+        if command and self.serial_port and self.serial_port.is_open:
             self.log_to_console(f"> {command}")
-            self.process.write(f"{command}\n".encode())
-            self.command_input.clear()
-        elif not self.process or self.process.state() != QProcess.Running:
-            self.log_to_console("Error: Process not running. Please connect first.")
+            try:
+                self.serial_port.write(f"{command}\n".encode('utf-8'))
+                self.command_input.clear()
+            except Exception as e:
+                self.log_to_console(f"Error sending command: {str(e)}")
+        elif not self.serial_port or not self.serial_port.is_open:
+            self.log_to_console("Error: Serial port not open. Please connect first.")
 
     def on_connect_clicked(self):
         """Handle connect button click"""
-        self.log_to_console("Connecting to Nios II Command Shell...")
+        if self.port_combo.count() == 0 or self.port_combo.currentText() == "No ports found":
+            self.log_to_console("Error: No COM port selected")
+            return
 
-        # Path to Nios II Command Shell
-        nios2_path = r"C:\intelFPGA_lite\18.1\nios2eds"
-        shell_script = r"C:\intelFPGA_lite\18.1\nios2eds\Nios II Command Shell.bat"
+        port_name = self.port_combo.currentData()
+        baud_rate = int(self.baud_combo.currentText())
 
-        # Create QProcess
-        self.process = QProcess(self)
-        self.process.setWorkingDirectory(nios2_path)
+        try:
+            self.log_to_console(f"Connecting to {port_name} at {baud_rate} baud...")
 
-        # Connect signals to handle output
-        self.process.readyReadStandardOutput.connect(self.handle_stdout)
-        self.process.readyReadStandardError.connect(self.handle_stderr)
-        self.process.finished.connect(self.process_finished)
+            # Open serial port
+            self.serial_port = serial.Serial(
+                port=port_name,
+                baudrate=baud_rate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=1
+            )
 
-        # Start the process
-        self.process.start("cmd.exe", ["/K", shell_script])
+            # Start reader thread
+            self.reader_thread = SerialReaderThread(self.serial_port)
+            self.reader_thread.data_received.connect(self.handle_serial_data)
+            self.reader_thread.start()
+
+            self.log_to_console(f"Connected successfully to {port_name}")
+
+        except Exception as e:
+            self.log_to_console(f"Error connecting: {str(e)}")
+            if self.serial_port:
+                self.serial_port.close()
+                self.serial_port = None
 
     def on_disconnect_clicked(self):
         """Handle disconnect button click"""
-        if self.process and self.process.state() == QProcess.Running:
-            self.log_to_console("Disconnecting from Nios II Command Shell...")
+        if self.serial_port and self.serial_port.is_open:
+            self.log_to_console("Disconnecting from serial port...")
 
-            # Send Ctrl-C to the process
-            self.log_to_console("Sending Ctrl-C to process...")
-            self.process.write(b'\x03')  # Ctrl-C is ASCII code 3
+            # Stop reader thread
+            if self.reader_thread:
+                self.reader_thread.stop()
+                self.reader_thread.wait()
+                self.reader_thread = None
 
-            # Wait a moment for the process to handle Ctrl-C
-            QTimer.singleShot(500, self.terminate_process)
+            # Close serial port
+            self.serial_port.close()
+            self.serial_port = None
+
+            self.log_to_console("Disconnected successfully")
         else:
             self.log_to_console("No active connection to disconnect")
 
-    def terminate_process(self):
-        """Terminate the process after sending Ctrl-C"""
-        if self.process and self.process.state() == QProcess.Running:
-            self.process.terminate()
-            # Give it a moment to terminate gracefully
-            if not self.process.waitForFinished(3000):
-                # If it doesn't finish within 3 seconds, force kill
-                self.process.kill()
-                self.log_to_console("Process forcefully terminated")
-            else:
-                self.log_to_console("Process terminated gracefully")
+    def handle_serial_data(self, text):
+        """Handle data received from serial port"""
+        self.console.append(text)
 
-    def handle_stderr(self):
-        """Handle standard error from the process"""
-        if self.process:
-            data = self.process.readAllStandardError()
-            text = bytes(data).decode("utf-8", errors="ignore")
-            self.console.append(f"Error: {text}")
-
-    def process_finished(self):
-        """Handle process termination"""
-        self.log_to_console("\n--- Process finished ---")
+        # Parse read responses if in reading mode
+        if self.reading_mode and self.waiting_for_response:
+            self.parse_read_response(text)
 
     def on_write_clicked(self):
         """Handle write button click"""
@@ -185,8 +256,8 @@ class BasicQtApp(QMainWindow):
         """Handle read button click"""
         self.log_to_console("Reading from all 64 addresses...")
 
-        if not self.process or self.process.state() != QProcess.Running:
-            self.log_to_console("Error: Process not running. Please connect first.")
+        if not self.serial_port or not self.serial_port.is_open:
+            self.log_to_console("Error: Serial port not open. Please connect first.")
             return
 
         # Clear previous values and start reading
@@ -201,27 +272,18 @@ class BasicQtApp(QMainWindow):
         """Send read command for current address"""
         if self.current_address < 64:
             command = f"R{self.current_address}"
-            for each in command:
-                self.process.write(f"{each}".encode(encoding='ascii'))
-            self.process.write(f"\n".encode(encoding='ascii'))
-            self.log_to_console(f"> {command}")
-            self.waiting_for_response = True
+            try:
+                self.serial_port.write(f"{command}\n".encode('utf-8'))
+                self.log_to_console(f"> {command}")
+                self.waiting_for_response = True
+            except Exception as e:
+                self.log_to_console(f"Error sending read command: {str(e)}")
+                self.reading_mode = False
         else:
             # All addresses read, plot the results
             self.reading_mode = False
             self.log_to_console("All addresses read successfully")
             self.plot_read_values()
-
-    def handle_stdout(self):
-        """Handle standard output from the process"""
-        if self.process:
-            data = self.process.readAllStandardOutput()
-            text = bytes(data).decode("utf-8", errors="ignore")
-            self.console.append(text)
-
-            # Parse read responses if in reading mode
-            if self.reading_mode and self.waiting_for_response:
-                self.parse_read_response(text)
 
     def parse_read_response(self, text):
         """Parse response from read commands"""
@@ -299,6 +361,18 @@ class BasicQtApp(QMainWindow):
         self.canvas.draw()
 
         self.log_to_console("Plot updated")
+
+    def closeEvent(self, event):
+        """Handle window close event"""
+        # Clean up serial connection
+        if self.reader_thread:
+            self.reader_thread.stop()
+            self.reader_thread.wait()
+
+        if self.serial_port and self.serial_port.is_open:
+            self.serial_port.close()
+
+        event.accept()
 
 
 def main():
