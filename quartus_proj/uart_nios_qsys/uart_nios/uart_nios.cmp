@@ -14,7 +14,9 @@
 			mm_bridge_0_m0_debugaccess       : out std_logic;                                        -- debugaccess
 			pio_0_external_connection_export : out std_logic_vector(7 downto 0);                     -- export
 			pll_0_locked_export              : out std_logic;                                        -- export
-			reset_reset_n                    : in  std_logic                     := 'X'              -- reset_n
+			reset_reset_n                    : in  std_logic                     := 'X';             -- reset_n
+			uart_0_external_connection_rxd   : in  std_logic                     := 'X';             -- rxd
+			uart_0_external_connection_txd   : out std_logic                                         -- txd
 		);
 	end component uart_nios;
 

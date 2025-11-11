@@ -1,9 +1,38 @@
 /*
- * PIO Toggle Timer Example
+ * FIR FPGA Control System with Dual Communication Channels
  *
- * This example toggles PIO output periodically over time.
- * It runs on the Nios II processor and requires a PIO device
- * in your system's hardware.
+ * This application provides a command-line interface for controlling
+ * an FPGA-based FIR filter system using dual communication channels:
+ *
+ * ===== COMMUNICATION ARCHITECTURE =====
+ * 1. RS232 UART (uart_0) - USER INTERFACE
+ *    - Purpose: Interactive command console for user
+ *    - Config: 115200 baud, 8N1, no flow control
+ *    - Features:
+ *      * Interrupt-driven RX (command input)
+ *      * Buffered TX with interrupt-driven transmission (512 byte circular buffer)
+ *      * Error detection (parity, frame, overrun)
+ *      * Non-blocking buffered output
+ *      * Automatic CRLF conversion (LF -> CRLF) for terminal compatibility
+ *    - Functions: uart_putchar(), uart_puts(), uart_put_int(), uart_flush()
+ *    - Pin connection: Connect to RS232 transceiver GPIO pins
+ *
+ * 2. JTAG UART (jtag_uart_0) - DEBUG CHANNEL
+ *    - Purpose: System debug messages and diagnostics
+ *    - Features: Non-blocking output via JTAG USB Blaster
+ *    - Functions: jtag_putchar(), jtag_puts(), jtag_put_int()
+ *    - Monitor via: nios2-terminal or Quartus System Console
+ *
+ * ===== SYSTEM FEATURES =====
+ * - FIR filter coefficient management (64 registers)
+ * - Periodic PIO toggle with configurable interval
+ * - Real-time command processing
+ * - UART error monitoring and reporting
+ *
+ * ===== COMMANDS (via RS232 UART) =====
+ * S<addr>$<value> - Set FIR register at address (0-64) with signed 16-bit value
+ * R<addr>         - Read FIR register at address (0-64)
+ * T<interval>     - Set PIO timer interval in ms (100-5000)
  *
  */
 
@@ -14,6 +43,7 @@
 #include "altera_avalon_pio_regs.h"
 #include "altera_avalon_jtag_uart_regs.h"
 #include "altera_avalon_timer_regs.h"
+#include "altera_avalon_uart_regs.h"
 
 // initial preload array
 // 500Hz Blackman LPF coefficients
@@ -43,6 +73,19 @@ volatile uint32_t timer_tick_count = 0;
 volatile uint8_t uart_rx_flag = 0;
 volatile char uart_rx_char = 0;
 
+// TX circular buffer for interrupt-driven transmission
+// Size can be increased for better burst handling (256, 512, 1024, 2048, etc.)
+// Larger buffer = more RAM usage but better handling of output bursts
+#define TX_BUFFER_SIZE 512
+volatile char tx_buffer[TX_BUFFER_SIZE];
+volatile uint16_t tx_head = 0;
+volatile uint16_t tx_tail = 0;
+
+// UART error counters for diagnostics
+volatile uint32_t uart_parity_errors = 0;
+volatile uint32_t uart_frame_errors = 0;
+volatile uint32_t uart_overrun_errors = 0;
+
 // Timer Interrupt Service Routine
 static void timer_isr(void *context)
 {
@@ -51,6 +94,69 @@ static void timer_isr(void *context)
 
 	// Increment tick counter
 	timer_tick_count++;
+}
+
+// RS232 UART Interrupt Service Routine (RX + TX + Error Handling)
+static void uart_isr(void *context)
+{
+	uint32_t status;
+	uint32_t control;
+
+	// Read the status register
+	status = IORD_ALTERA_AVALON_UART_STATUS(UART_0_BASE);
+
+	// ===== ERROR HANDLING =====
+	// Check for parity error
+	if (status & ALTERA_AVALON_UART_STATUS_PE_MSK)
+	{
+		uart_parity_errors++;
+		// Clear by reading RXDATA
+		(void)IORD_ALTERA_AVALON_UART_RXDATA(UART_0_BASE);
+	}
+
+	// Check for frame error
+	if (status & ALTERA_AVALON_UART_STATUS_FE_MSK)
+	{
+		uart_frame_errors++;
+		// Clear by reading RXDATA
+		(void)IORD_ALTERA_AVALON_UART_RXDATA(UART_0_BASE);
+	}
+
+	// Check for receiver overrun error (data lost)
+	if (status & ALTERA_AVALON_UART_STATUS_ROE_MSK)
+	{
+		uart_overrun_errors++;
+		// Clear by writing to status register
+	}
+
+	// ===== RECEIVE HANDLING =====
+	// Check if receive data is ready (RRDY bit)
+	if (status & ALTERA_AVALON_UART_STATUS_RRDY_MSK)
+	{
+		// Read the received character from RXDATA register
+		uart_rx_char = (char)IORD_ALTERA_AVALON_UART_RXDATA(UART_0_BASE);
+		uart_rx_flag = 1;
+	}
+
+	// ===== TRANSMIT HANDLING (Interrupt-driven) =====
+	// Check if transmitter is ready and we have data to send
+	if ((status & ALTERA_AVALON_UART_STATUS_TRDY_MSK) && (tx_tail != tx_head))
+	{
+		// Send next character from buffer
+		IOWR_ALTERA_AVALON_UART_TXDATA(UART_0_BASE, tx_buffer[tx_tail]);
+		tx_tail = (tx_tail + 1) % TX_BUFFER_SIZE;
+
+		// If buffer is now empty, disable TX interrupt
+		if (tx_tail == tx_head)
+		{
+			control = IORD_ALTERA_AVALON_UART_CONTROL(UART_0_BASE);
+			control &= ~ALTERA_AVALON_UART_CONTROL_TRDY_MSK; // Disable TX interrupt
+			IOWR_ALTERA_AVALON_UART_CONTROL(UART_0_BASE, control);
+		}
+	}
+
+	// Clear interrupt status
+	IOWR_ALTERA_AVALON_UART_STATUS(UART_0_BASE, 0);
 }
 
 // JTAG UART Interrupt Service Routine
@@ -73,24 +179,132 @@ static void jtag_uart_isr(void *context)
 	IOWR_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE, control);
 }
 
-// Lightweight UART output functions (no printf overhead)
-// Non-blocking version - returns 1 if character was sent, 0 if discarded
+// ========== RS232 UART OUTPUT FUNCTIONS (User Interface) ==========
+// Interrupt-driven buffered UART output - queues character for transmission
+// Returns 1 if character was queued, 0 if buffer is full
 int uart_putchar(char c)
 {
-	// Check if there's space in the JTAG UART FIFO (bits 31:16 = write space)
-	if ((IORD_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE) & 0xFFFF0000) != 0)
+	uint16_t next_head;
+	uint32_t control;
+
+	// Calculate next head position
+	next_head = (tx_head + 1) % TX_BUFFER_SIZE;
+
+	// Check if buffer is full
+	if (next_head == tx_tail)
 	{
-		IOWR_ALTERA_AVALON_JTAG_UART_DATA(JTAG_UART_0_BASE, c);
-		return 1; // Character sent successfully
+		// Buffer full - could implement blocking wait here if needed
+		return 0;
 	}
-	return 0; // No space available, character discarded
+
+	// Add character to buffer
+	tx_buffer[tx_head] = c;
+	tx_head = next_head;
+
+	// Enable TX interrupt to start transmission
+	control = IORD_ALTERA_AVALON_UART_CONTROL(UART_0_BASE);
+	control |= ALTERA_AVALON_UART_CONTROL_TRDY_MSK; // Enable TX interrupt
+	IOWR_ALTERA_AVALON_UART_CONTROL(UART_0_BASE, control);
+
+	return 1; // Character queued successfully
+}
+
+// Blocking version with timeout - waits for buffer space
+int uart_putchar_blocking(char c, uint32_t timeout_ms)
+{
+	uint32_t start_time = timer_tick_count;
+
+	while (!uart_putchar(c))
+	{
+		// Check timeout
+		if ((timer_tick_count - start_time) >= timeout_ms)
+		{
+			return 0; // Timeout
+		}
+	}
+
+	return 1; // Success
+}
+
+// Wait for all buffered data to be transmitted
+void uart_flush(void)
+{
+	// Wait until TX buffer is empty
+	while (tx_head != tx_tail)
+	{
+		// Busy wait - could yield to other tasks here
+	}
 }
 
 void uart_puts(const char *str)
 {
 	while (*str)
 	{
-		uart_putchar(*str++);
+		char c = *str++;
+		// Auto-convert LF to CRLF for proper terminal display
+		if (c == '\n')
+		{
+			uart_putchar('\r');
+		}
+		uart_putchar(c);
+	}
+}
+
+// ========== JTAG UART OUTPUT FUNCTIONS (Debug Messages) ==========
+// Direct JTAG UART output for debug messages (non-blocking)
+void jtag_putchar(char c)
+{
+	uint32_t data;
+
+	// Check if space available in write FIFO
+	data = IORD_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE);
+	if ((data & 0xFFFF) > 0) // WSPACE field indicates free space
+	{
+		IOWR_ALTERA_AVALON_JTAG_UART_DATA(JTAG_UART_0_BASE, c);
+	}
+	// If no space, character is silently dropped (non-blocking)
+}
+
+void jtag_puts(const char *str)
+{
+	while (*str)
+	{
+		jtag_putchar(*str++);
+	}
+}
+
+void jtag_put_int(int num)
+{
+	char buffer[12];
+	int i = 0;
+	int is_negative = 0;
+
+	if (num < 0)
+	{
+		is_negative = 1;
+		num = -num;
+	}
+
+	if (num == 0)
+	{
+		jtag_putchar('0');
+		return;
+	}
+
+	while (num > 0)
+	{
+		buffer[i++] = '0' + (num % 10);
+		num /= 10;
+	}
+
+	if (is_negative)
+	{
+		jtag_putchar('-');
+	}
+
+	while (i > 0)
+	{
+		jtag_putchar(buffer[--i]);
 	}
 }
 
@@ -131,23 +345,6 @@ void uart_put_int(int num)
 	{
 		uart_putchar(buffer[--i]);
 	}
-}
-
-// Non-blocking delay function - returns 1 when delay period has elapsed
-// Only increments counter when increment parameter is 1
-int delay_non_blocking(volatile uint32_t *tick_counter, volatile uint32_t delay_ticks, int increment)
-{
-	if (increment)
-	{
-		(*tick_counter)++;
-	}
-
-	if (*tick_counter >= delay_ticks)
-	{
-		*tick_counter = 0;
-		return 1; // Delay period elapsed
-	}
-	return 0; // Still waiting
 }
 
 // Custom function to parse integer from string
@@ -223,21 +420,6 @@ int parse_signed_int(const char *str, int16_t *result)
 	return 0; // Failure
 }
 
-// Non-blocking function to check if character is available from JTAG UART
-int alt_getchar_nonblocking(char *c)
-{
-	// Read JTAG UART data register directly
-	uint32_t data = IORD_ALTERA_AVALON_JTAG_UART_DATA(JTAG_UART_0_BASE);
-
-	// Check RVALID bit (bit 15) to see if data is valid
-	if (data & 0x8000)
-	{
-		// Extract the character (lower 8 bits)
-		*c = (char)(data & 0xFF);
-		return 1;
-	}
-	return 0;
-}
 
 // Process console input for commands using interrupt-driven input
 // Commands:
@@ -397,6 +579,7 @@ int main()
 {
 	uint8_t pio_state = 0;
 	volatile uint32_t delay_value = 1000; // Default delay value in ms (1 second)
+	uint32_t debug_counter = 0; // Counter for periodic debug messages
 
 	// Register Timer interrupt handler
 	alt_ic_isr_register(TIMER_0_IRQ_INTERRUPT_CONTROLLER_ID,
@@ -405,6 +588,7 @@ int main()
 	                    NULL,
 	                    0x0);
 
+	// ===== JTAG UART INITIALIZATION (Debug Messages) =====
 	// Register JTAG UART interrupt handler
 	alt_ic_isr_register(JTAG_UART_0_IRQ_INTERRUPT_CONTROLLER_ID,
 	                    JTAG_UART_0_IRQ,
@@ -416,6 +600,9 @@ int main()
 	uint32_t control = IORD_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE);
 	control |= ALTERA_AVALON_JTAG_UART_CONTROL_RE_MSK; // Enable read interrupt
 	IOWR_ALTERA_AVALON_JTAG_UART_CONTROL(JTAG_UART_0_BASE, control);
+
+	// Send debug message to JTAG UART
+	jtag_puts("\n=== DEBUG: System Starting ===\n");
 
 	// Timer is configured to run continuously with period of 1ms
 	// (configured in Qsys as TIMER_0_PERIOD = 1ms)
@@ -429,21 +616,51 @@ int main()
 		ALTERA_AVALON_TIMER_CONTROL_CONT_MSK |
 		ALTERA_AVALON_TIMER_CONTROL_START_MSK);
 
+	// ===== RS232 UART INITIALIZATION (User Interface) =====
+	// Initialize TX buffer (head = tail = 0, buffer empty)
+	tx_head = 0;
+	tx_tail = 0;
+
+	// Register UART interrupt handler
+	alt_ic_isr_register(
+		UART_0_IRQ_INTERRUPT_CONTROLLER_ID,
+		UART_0_IRQ,
+		uart_isr,
+		NULL,
+		0x0
+	);
+
+	// Clear any pending UART status
+	IOWR_ALTERA_AVALON_UART_STATUS(UART_0_BASE, 0);
+
+	// Enable RX interrupts only (TX interrupt enabled dynamically when needed)
+	IOWR_ALTERA_AVALON_UART_CONTROL(UART_0_BASE, ALTERA_AVALON_UART_CONTROL_RRDY_MSK);
+
+	// Send debug message to JTAG UART
+	jtag_puts("DEBUG: UART initialized - 115200 8N1\n");
 	
 	// Preload FIR coefficients into MM bridge registers
+	jtag_puts("DEBUG: Preloading FIR coefficients...\n");
 	for (int i = 0; i < 64; i++)
 	{
 		IOWR_32DIRECT(MM_BRIDGE_0_BASE, i, (uint32_t)fir_coefficients[i]);
 	}
+	jtag_puts("DEBUG: FIR coefficients loaded\n");
 
-	uart_puts("\n*** FIR FPGA Console ***\n");
+	// ===== USER INTERFACE via RS232 UART =====
+	uart_puts("\n\n*** FIR FPGA Console ***\n");
+	uart_puts("RS232 UART: 115200 baud, 8N1\n");
 	uart_puts("Commands:\n");
 	uart_puts("  S<addr>$<value> - Set register (addr: 0-64, value: signed 16-bit)\n");
 	uart_puts("  R<addr>         - Read register (addr: 0-64)\n");
 	uart_puts("  T<interval>     - Set timer interval in ms (100-5000)\n");
-	uart_puts("Current timer interval: ");
+	uart_puts("\nCurrent timer interval: ");
 	uart_put_int((int)delay_value);
-	uart_puts(" ms\n\n");
+	uart_puts(" ms\n");
+	uart_puts("Ready> ");
+
+	// Send debug info to JTAG UART
+	jtag_puts("DEBUG: System ready, entering main loop\n");
 
 	while (1)
 	{
@@ -458,6 +675,22 @@ int main()
 			// Toggle PIO output bit 0
 			pio_state ^= 0x01;
 			IOWR_ALTERA_AVALON_PIO_DATA(PIO_0_BASE, pio_state);
+
+			// Send periodic debug info to JTAG UART (every 10 toggles)
+			debug_counter++;
+			if (debug_counter >= 10)
+			{
+				debug_counter = 0;
+
+				// Debug info to JTAG UART only
+				jtag_puts("DEBUG: PIO toggling, errors: PE=");
+				jtag_put_int(uart_parity_errors);
+				jtag_puts(" FE=");
+				jtag_put_int(uart_frame_errors);
+				jtag_puts(" OE=");
+				jtag_put_int(uart_overrun_errors);
+				jtag_puts("\n");
+			}
 		}
 	}
 

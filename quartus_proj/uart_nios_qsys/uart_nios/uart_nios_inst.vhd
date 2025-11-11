@@ -14,26 +14,30 @@
 			mm_bridge_0_m0_debugaccess       : out std_logic;                                        -- debugaccess
 			pio_0_external_connection_export : out std_logic_vector(7 downto 0);                     -- export
 			pll_0_locked_export              : out std_logic;                                        -- export
-			reset_reset_n                    : in  std_logic                     := 'X'              -- reset_n
+			reset_reset_n                    : in  std_logic                     := 'X';             -- reset_n
+			uart_0_external_connection_rxd   : in  std_logic                     := 'X';             -- rxd
+			uart_0_external_connection_txd   : out std_logic                                         -- txd
 		);
 	end component uart_nios;
 
 	u0 : component uart_nios
 		port map (
-			clk_clk                          => CONNECTED_TO_clk_clk,                          --                       clk.clk
-			clock_bridge_0_out_clk_clk       => CONNECTED_TO_clock_bridge_0_out_clk_clk,       --    clock_bridge_0_out_clk.clk
-			mm_bridge_0_m0_waitrequest       => CONNECTED_TO_mm_bridge_0_m0_waitrequest,       --            mm_bridge_0_m0.waitrequest
-			mm_bridge_0_m0_readdata          => CONNECTED_TO_mm_bridge_0_m0_readdata,          --                          .readdata
-			mm_bridge_0_m0_readdatavalid     => CONNECTED_TO_mm_bridge_0_m0_readdatavalid,     --                          .readdatavalid
-			mm_bridge_0_m0_burstcount        => CONNECTED_TO_mm_bridge_0_m0_burstcount,        --                          .burstcount
-			mm_bridge_0_m0_writedata         => CONNECTED_TO_mm_bridge_0_m0_writedata,         --                          .writedata
-			mm_bridge_0_m0_address           => CONNECTED_TO_mm_bridge_0_m0_address,           --                          .address
-			mm_bridge_0_m0_write             => CONNECTED_TO_mm_bridge_0_m0_write,             --                          .write
-			mm_bridge_0_m0_read              => CONNECTED_TO_mm_bridge_0_m0_read,              --                          .read
-			mm_bridge_0_m0_byteenable        => CONNECTED_TO_mm_bridge_0_m0_byteenable,        --                          .byteenable
-			mm_bridge_0_m0_debugaccess       => CONNECTED_TO_mm_bridge_0_m0_debugaccess,       --                          .debugaccess
-			pio_0_external_connection_export => CONNECTED_TO_pio_0_external_connection_export, -- pio_0_external_connection.export
-			pll_0_locked_export              => CONNECTED_TO_pll_0_locked_export,              --              pll_0_locked.export
-			reset_reset_n                    => CONNECTED_TO_reset_reset_n                     --                     reset.reset_n
+			clk_clk                          => CONNECTED_TO_clk_clk,                          --                        clk.clk
+			clock_bridge_0_out_clk_clk       => CONNECTED_TO_clock_bridge_0_out_clk_clk,       --     clock_bridge_0_out_clk.clk
+			mm_bridge_0_m0_waitrequest       => CONNECTED_TO_mm_bridge_0_m0_waitrequest,       --             mm_bridge_0_m0.waitrequest
+			mm_bridge_0_m0_readdata          => CONNECTED_TO_mm_bridge_0_m0_readdata,          --                           .readdata
+			mm_bridge_0_m0_readdatavalid     => CONNECTED_TO_mm_bridge_0_m0_readdatavalid,     --                           .readdatavalid
+			mm_bridge_0_m0_burstcount        => CONNECTED_TO_mm_bridge_0_m0_burstcount,        --                           .burstcount
+			mm_bridge_0_m0_writedata         => CONNECTED_TO_mm_bridge_0_m0_writedata,         --                           .writedata
+			mm_bridge_0_m0_address           => CONNECTED_TO_mm_bridge_0_m0_address,           --                           .address
+			mm_bridge_0_m0_write             => CONNECTED_TO_mm_bridge_0_m0_write,             --                           .write
+			mm_bridge_0_m0_read              => CONNECTED_TO_mm_bridge_0_m0_read,              --                           .read
+			mm_bridge_0_m0_byteenable        => CONNECTED_TO_mm_bridge_0_m0_byteenable,        --                           .byteenable
+			mm_bridge_0_m0_debugaccess       => CONNECTED_TO_mm_bridge_0_m0_debugaccess,       --                           .debugaccess
+			pio_0_external_connection_export => CONNECTED_TO_pio_0_external_connection_export, --  pio_0_external_connection.export
+			pll_0_locked_export              => CONNECTED_TO_pll_0_locked_export,              --               pll_0_locked.export
+			reset_reset_n                    => CONNECTED_TO_reset_reset_n,                    --                      reset.reset_n
+			uart_0_external_connection_rxd   => CONNECTED_TO_uart_0_external_connection_rxd,   -- uart_0_external_connection.rxd
+			uart_0_external_connection_txd   => CONNECTED_TO_uart_0_external_connection_txd    --                           .txd
 		);
 

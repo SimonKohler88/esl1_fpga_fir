@@ -11,7 +11,10 @@ entity uart is
         pio_data_out: out STD_LOGIC_VECTOR (7 downto 0); -- debug and alive signals
 
          -- Filter Koeffs von Simon via UART
-        FIR_Coeffs : out FIR_type_coeffs         -- 64 x 16bit 
+        FIR_Coeffs : out FIR_type_coeffs;         -- 64 x 16bit 
+
+        uart_rxd : in  STD_LOGIC;
+        uart_txd : out STD_LOGIC
     );
 end uart;
 
@@ -33,7 +36,9 @@ architecture Behavioral of uart is
             mm_bridge_0_m0_read              : out std_logic;                                        -- read
             mm_bridge_0_m0_byteenable        : out std_logic_vector(3 downto 0);                     -- byteenable
             mm_bridge_0_m0_debugaccess       : out std_logic;                                        -- debugaccess
-            clock_bridge_0_out_clk_clk       : out std_logic                                         -- clk
+            clock_bridge_0_out_clk_clk       : out std_logic;
+            uart_0_external_connection_rxd   : in  std_logic                     := 'X';             -- rxd
+            uart_0_external_connection_txd   : out std_logic                                         -- txd                                         -- clk
         );
     end component uart_nios;
 
@@ -76,7 +81,9 @@ begin
             mm_bridge_0_m0_read              => av_mm_rd,              --                          .read
             mm_bridge_0_m0_byteenable        => av_mm_byte_en,        --                          .byteenable
             mm_bridge_0_m0_debugaccess       => av_mm_debug_access,       --                          .debugaccess
-            clock_bridge_0_out_clk_clk       => clk_out        --    clock_bridge_0_out_clk.clk
+            clock_bridge_0_out_clk_clk       => clk_out,        --    clock_bridge_0_out_clk.clk
+            uart_0_external_connection_rxd   => uart_rxd,        -- rxd
+            uart_0_external_connection_txd   => uart_txd                                         -- txd
 
         );
 

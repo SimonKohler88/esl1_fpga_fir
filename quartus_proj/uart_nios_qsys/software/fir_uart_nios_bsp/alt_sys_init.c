@@ -4,7 +4,7 @@
  * Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'uart_nios'
  * SOPC Builder design path: ../../uart_nios.sopcinfo
  *
- * Generated: Sun Nov 09 13:20:26 CET 2025
+ * Generated: Tue Nov 11 10:57:47 CET 2025
  */
 
 /*
@@ -60,8 +60,8 @@
 
 #include "altera_nios2_gen2_irq.h"
 #include "altera_avalon_jtag_uart.h"
-#include "altera_avalon_sysid_qsys.h"
 #include "altera_avalon_timer.h"
+#include "altera_avalon_uart.h"
 
 /*
  * Allocate the device storage
@@ -69,8 +69,8 @@
 
 ALTERA_NIOS2_GEN2_IRQ_INSTANCE ( NIOS2_GEN2_0, nios2_gen2_0);
 ALTERA_AVALON_JTAG_UART_INSTANCE ( JTAG_UART_0, jtag_uart_0);
-ALTERA_AVALON_SYSID_QSYS_INSTANCE ( SYSID_QSYS_0, sysid_qsys_0);
 ALTERA_AVALON_TIMER_INSTANCE ( TIMER_0, timer_0);
+ALTERA_AVALON_UART_INSTANCE ( UART_0, uart_0);
 
 /*
  * Initialize the interrupt controller devices
@@ -95,5 +95,5 @@ void alt_sys_init( void )
 {
     ALTERA_AVALON_TIMER_INIT ( TIMER_0, timer_0);
     ALTERA_AVALON_JTAG_UART_INIT ( JTAG_UART_0, jtag_uart_0);
-    ALTERA_AVALON_SYSID_QSYS_INIT ( SYSID_QSYS_0, sysid_qsys_0);
+    ALTERA_AVALON_UART_INIT ( UART_0, uart_0);
 }

@@ -30,7 +30,10 @@ entity esl_fir_filter is
         AUD_XCK    : out std_logic;                          -- audio master clock
 
         FPGA_I2C_SDAT : inout std_logic;                     -- I2C data line
-        FPGA_I2C_SCLK : out   std_logic                      -- I2C clock
+        FPGA_I2C_SCLK : out   std_logic;                      -- I2C clock
+
+        GPIO_0 : out std_logic_vector(35 downto 0);                          -- uart tx
+        GPIO_1 : in std_logic_vector(35 downto 0)                            -- uart rx
     );
 end entity esl_fir_filter;
 
@@ -42,16 +45,21 @@ architecture rtl of esl_fir_filter is
     signal blink_counter : unsigned(24 downto 0) := (others => '0'); -- 25 bits -> covers 25,000,000
     signal alive         : std_logic := '0';
     constant HALF_PERIOD : integer := 25000000; -- CLOCK_50 / 2 for 1 Hz toggle
+    
+    component uart is
+        Port (
+            clk     : in  STD_LOGIC;
+            reset_n   : in  STD_LOGIC;
+            pio_data_out: out STD_LOGIC_VECTOR (7 downto 0);
+            FIR_Coeffs : out FIR_type_coeffs;         -- 64 x 16bit
+            uart_rxd : in  STD_LOGIC;
+            uart_txd : out STD_LOGIC 
+            );
+    end component;
     signal nios_pio_data : std_logic_vector(7 downto 0);
-
-component uart is
-    Port (
-        clk     : in  STD_LOGIC;
-        reset_n   : in  STD_LOGIC;
-        pio_data_out: out STD_LOGIC_VECTOR (7 downto 0);
-        FIR_Coeffs : out FIR_type_coeffs         -- 64 x 16bit 
-    );
-end component;
+    signal FIR_Coeffs : FIR_type_coeffs;
+    signal sig_uart_rxd : std_logic;
+    signal sig_uart_txd : std_logic;
 
 component FIR_Filter is
 port (
@@ -71,7 +79,7 @@ port (
     FIR_Coeffs : in FIR_type_coeffs         -- 64 x 16bit 
 );
 end component;
-    signal FIR_Coeffs : FIR_type_coeffs;
+    
     signal sig_AVS_audio_in : std_logic_vector(15 downto 0);
     signal sig_AVS_audio_in_valid : std_logic;
     signal sig_AVS_audio_in_ready : std_logic;
@@ -151,8 +159,14 @@ begin
         clk => CLOCK_50,
         reset_n => reset_n,
         pio_data_out => nios_pio_data,
-        FIR_Coeffs => FIR_Coeffs
+        FIR_Coeffs => FIR_Coeffs,
+        uart_rxd => sig_uart_rxd,
+        uart_txd => sig_uart_txd
     );
+
+    GPIO_0(0) <= sig_uart_txd;
+    sig_uart_rxd <= GPIO_1(0);
+    GPIO_0(35 downto 1) <= (others => '0');
 
     f0 : FIR_Filter
         port map (

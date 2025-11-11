@@ -4,7 +4,7 @@
  * Machine generated for CPU 'nios2_gen2_0' in SOPC Builder design 'uart_nios'
  * SOPC Builder design path: ../../uart_nios.sopcinfo
  *
- * Generated: Sun Nov 09 13:20:26 CET 2025
+ * Generated: Tue Nov 11 10:57:47 CET 2025
  */
 
 /*
@@ -145,8 +145,8 @@
 #define __ALTERA_AVALON_MM_BRIDGE
 #define __ALTERA_AVALON_ONCHIP_MEMORY2
 #define __ALTERA_AVALON_PIO
-#define __ALTERA_AVALON_SYSID_QSYS
 #define __ALTERA_AVALON_TIMER
+#define __ALTERA_AVALON_UART
 #define __ALTERA_NIOS2_GEN2
 
 
@@ -166,19 +166,19 @@
 #define ALT_NUM_INTERNAL_INTERRUPT_CONTROLLERS 1
 #define ALT_NUM_INTERRUPT_CONTROLLERS 1
 #define ALT_STDERR "/dev/jtag_uart_0"
-#define ALT_STDERR_BASE 0x41438
+#define ALT_STDERR_BASE 0x41450
 #define ALT_STDERR_DEV jtag_uart_0
 #define ALT_STDERR_IS_JTAG_UART
 #define ALT_STDERR_PRESENT
 #define ALT_STDERR_TYPE "altera_avalon_jtag_uart"
 #define ALT_STDIN "/dev/jtag_uart_0"
-#define ALT_STDIN_BASE 0x41438
+#define ALT_STDIN_BASE 0x41450
 #define ALT_STDIN_DEV jtag_uart_0
 #define ALT_STDIN_IS_JTAG_UART
 #define ALT_STDIN_PRESENT
 #define ALT_STDIN_TYPE "altera_avalon_jtag_uart"
 #define ALT_STDOUT "/dev/jtag_uart_0"
-#define ALT_STDOUT_BASE 0x41438
+#define ALT_STDOUT_BASE 0x41450
 #define ALT_STDOUT_DEV jtag_uart_0
 #define ALT_STDOUT_IS_JTAG_UART
 #define ALT_STDOUT_PRESENT
@@ -203,15 +203,15 @@
  */
 
 #define ALT_MODULE_CLASS_jtag_uart_0 altera_avalon_jtag_uart
-#define JTAG_UART_0_BASE 0x41438
+#define JTAG_UART_0_BASE 0x41450
 #define JTAG_UART_0_IRQ 1
 #define JTAG_UART_0_IRQ_INTERRUPT_CONTROLLER_ID 0
 #define JTAG_UART_0_NAME "/dev/jtag_uart_0"
-#define JTAG_UART_0_READ_DEPTH 256
+#define JTAG_UART_0_READ_DEPTH 64
 #define JTAG_UART_0_READ_THRESHOLD 8
 #define JTAG_UART_0_SPAN 8
 #define JTAG_UART_0_TYPE "altera_avalon_jtag_uart"
-#define JTAG_UART_0_WRITE_DEPTH 256
+#define JTAG_UART_0_WRITE_DEPTH 64
 #define JTAG_UART_0_WRITE_THRESHOLD 8
 
 
@@ -264,7 +264,7 @@
  */
 
 #define ALT_MODULE_CLASS_pio_0 altera_avalon_pio
-#define PIO_0_BASE 0x41420
+#define PIO_0_BASE 0x41440
 #define PIO_0_BIT_CLEARING_EDGE_REGISTER 0
 #define PIO_0_BIT_MODIFYING_OUTPUT_REGISTER 0
 #define PIO_0_CAPTURE 0
@@ -286,29 +286,13 @@
 
 
 /*
- * sysid_qsys_0 configuration
- *
- */
-
-#define ALT_MODULE_CLASS_sysid_qsys_0 altera_avalon_sysid_qsys
-#define SYSID_QSYS_0_BASE 0x41430
-#define SYSID_QSYS_0_ID 66
-#define SYSID_QSYS_0_IRQ -1
-#define SYSID_QSYS_0_IRQ_INTERRUPT_CONTROLLER_ID -1
-#define SYSID_QSYS_0_NAME "/dev/sysid_qsys_0"
-#define SYSID_QSYS_0_SPAN 8
-#define SYSID_QSYS_0_TIMESTAMP 1762681316
-#define SYSID_QSYS_0_TYPE "altera_avalon_sysid_qsys"
-
-
-/*
  * timer_0 configuration
  *
  */
 
 #define ALT_MODULE_CLASS_timer_0 altera_avalon_timer
 #define TIMER_0_ALWAYS_RUN 1
-#define TIMER_0_BASE 0x41400
+#define TIMER_0_BASE 0x41420
 #define TIMER_0_COUNTER_SIZE 32
 #define TIMER_0_FIXED_PERIOD 1
 #define TIMER_0_FREQ 120000000
@@ -326,5 +310,30 @@
 #define TIMER_0_TIMEOUT_PULSE_OUTPUT 0
 #define TIMER_0_TIMER_DEVICE_TYPE 1
 #define TIMER_0_TYPE "altera_avalon_timer"
+
+
+/*
+ * uart_0 configuration
+ *
+ */
+
+#define ALT_MODULE_CLASS_uart_0 altera_avalon_uart
+#define UART_0_BASE 0x41400
+#define UART_0_BAUD 115200
+#define UART_0_DATA_BITS 8
+#define UART_0_FIXED_BAUD 1
+#define UART_0_FREQ 120000000
+#define UART_0_IRQ 2
+#define UART_0_IRQ_INTERRUPT_CONTROLLER_ID 0
+#define UART_0_NAME "/dev/uart_0"
+#define UART_0_PARITY 'N'
+#define UART_0_SIM_CHAR_STREAM ""
+#define UART_0_SIM_TRUE_BAUD 0
+#define UART_0_SPAN 32
+#define UART_0_STOP_BITS 1
+#define UART_0_SYNC_REG_DEPTH 2
+#define UART_0_TYPE "altera_avalon_uart"
+#define UART_0_USE_CTS_RTS 0
+#define UART_0_USE_EOP_REGISTER 0
 
 #endif /* __SYSTEM_H_ */
