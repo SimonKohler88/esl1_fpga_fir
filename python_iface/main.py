@@ -11,6 +11,8 @@ from matplotlib.figure import Figure
 import numpy as np
 import serial
 import serial.tools.list_ports
+from scipy.signal import firwin, freqz
+
 
 """
 Commands:
@@ -119,13 +121,26 @@ class BasicQtApp(QMainWindow):
         disconnect_btn.clicked.connect(self.on_disconnect_clicked)
         button_layout.addWidget(disconnect_btn)
 
-        write_btn = QPushButton("Write")
-        write_btn.clicked.connect(self.on_write_clicked)
-        button_layout.addWidget(write_btn)
-
         read_btn = QPushButton("Read")
         read_btn.clicked.connect(self.on_read_clicked)
         button_layout.addWidget(read_btn)
+        
+        compute_btn = QPushButton("Compute and Write")
+        compute_btn.clicked.connect(self.on_compute_and_write_clicked)
+        button_layout.addWidget(compute_btn)
+        
+        # Filter design controls
+        filter_layout = QHBoxLayout()
+
+        self.cutoff_edit = QLineEdit()
+        self.cutoff_edit.setPlaceholderText("Cutoff (e.g. 2000 or 2000,4000)")
+        filter_layout.addWidget(self.cutoff_edit)
+
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["lp", "hp", "bp", "bs"])
+        filter_layout.addWidget(self.type_combo)
+
+        button_layout.addLayout(filter_layout)
 
         button_layout.addStretch()
 
@@ -259,10 +274,6 @@ class BasicQtApp(QMainWindow):
             # Accumulate text in response buffer
             self.response_buffer += text
             self.parse_read_response()
-
-    def on_write_clicked(self):
-        """Handle write button click"""
-        self.log_to_console("Write button clicked")
 
     def on_read_clicked(self):
         """Handle read button click"""
@@ -428,6 +439,86 @@ class BasicQtApp(QMainWindow):
             self.serial_port.close()
 
         event.accept()
+        
+    def on_compute_and_write_clicked(self):
+        if not self.serial_port or not self.serial_port.is_open:
+            self.log_to_console("Error: Serial port not open.")
+            return
+
+        # Parse cutoff text
+        text = self.cutoff_edit.text().strip()
+        if not text:
+            self.log_to_console("Error: no cutoff frequency entered.")
+            return
+
+        try:
+            if "," in text:
+                c = [float(x) for x in text.split(",")]
+            else:
+                c = [float(text)]
+        except ValueError:
+            self.log_to_console("Error: cutoff must be numeric (e.g. 3000 or 3000,6000).")
+            return
+
+        ftype = self.type_combo.currentText()
+        fs = 48000.0
+        taps = 64
+        nyq = fs / 2.0
+
+        # Basic sanity
+        if any(f <= 0 or f >= nyq for f in c):
+            self.log_to_console(f"Error: cutoff must be in (0, {nyq} Hz).")
+            return
+
+        if ftype in ["bp", "bs"] and len(c) != 2:
+            self.log_to_console("Error: band-pass/stop requires two cutoff frequencies (f_low,f_high).")
+            return
+
+        # ---- FIR design with odd-tap fix for hp / bs ----
+        internal_taps = taps
+        if ftype in ["hp", "bs"] and (taps % 2 == 0):
+            internal_taps = taps + 1  # make it odd for SciPy
+
+        # Normalize cutoffs
+        if ftype in ["lp", "hp"]:
+            norm = c[0] / nyq
+            # keep strictly inside (0,1)
+            norm = max(1e-6, min(norm, 0.999999))
+            coeff = firwin(internal_taps, norm, pass_zero=(ftype == "lp"))
+
+        else:  # bp / bs
+            norm = [f / nyq for f in c]
+            norm = [max(1e-6, min(v, 0.999999)) for v in norm]
+            coeff = firwin(internal_taps, norm, pass_zero=(ftype == "bs"))
+
+        # Trim back to 64 taps if we increased it
+        if internal_taps != taps:
+            center = internal_taps // 2
+            coeff = np.delete(coeff, center)
+
+        # Scale to Q1.15
+        scale = 2**15
+        fixed = np.round(coeff * scale)
+        fixed = np.clip(fixed, -32768, 32767).astype(np.int16)
+
+        self.log_to_console("Writing computed FIR coefficients...")
+
+        for addr, val in enumerate(fixed):
+            cmd = f"S{addr}${int(val)}"
+            try:
+                self.serial_port.write((cmd + "\n").encode())
+                self.log_to_console(f"> {cmd}")
+            except Exception as e:
+                self.log_to_console(f"Error sending {cmd}: {e}")
+                break
+
+        self.log_to_console("Done writing coefficients.")
+
+        
+        
+        
+
+
 
 
 def main():
