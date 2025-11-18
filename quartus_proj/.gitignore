@@ -1,5 +1,7 @@
 /incremental_db
-/output_files
+/output_files/*
+!/output_files/esl_fir_filter.jic
+!/output_files/esl_fir_filter.sof
 *.bak
 /db
 c5_pin_model*
