@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ip>
+ <presets version="12.1">
+  <preset
+     name="TEI0001_single_W9864G6JT-6"
+     kind="sdram_controller_axi4"
+     version="All"
+     description="8 MBytes sdram memory with axi4 interface">
+   <parameter name="SDRAM_TRCD_NS" value="15" />
+   <parameter name="SDRAM_ROW_W" value="12" />
+   <parameter name="SDRAM_CAS_LATENCY" value="3" />
+   <parameter name="SDRAM_START_DELAY_US" value="200" />
+   <parameter name="SDRAM_COL_W" value="8" />
+   <parameter name="SDRAM_BANKS" value="4" />
+   <parameter name="SDRAM_TRP_NS" value="15" />
+   <parameter name="SDRAM_TRFC_NS" value="60" />
+   <parameter name="SDRAM_MHZ" value="100" />
+  </preset>
+  <preset
+     name="TEI0001_single_W9825G6JB-6"
+     kind="sdram_controller_axi4"
+     version="All"
+     description="32 MBytes sdram memory with axi4 interface">
+   <parameter name="SDRAM_TRCD_NS" value="15" />
+   <parameter name="SDRAM_ROW_W" value="13" />
+   <parameter name="SDRAM_CAS_LATENCY" value="3" />
+   <parameter name="SDRAM_START_DELAY_US" value="200" />
+   <parameter name="SDRAM_COL_W" value="9" />
+   <parameter name="SDRAM_BANKS" value="4" />
+   <parameter name="SDRAM_TRP_NS" value="15" />
+   <parameter name="SDRAM_TRFC_NS" value="60" />
+   <parameter name="SDRAM_MHZ" value="100" />
+  </preset>
+ </presets>
+</ip>

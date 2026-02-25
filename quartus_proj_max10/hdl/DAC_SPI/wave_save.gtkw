@@ -1,0 +1,36 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Mon Feb 23 21:12:56 2026
+[*]
+[dumpfile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\DAC_SPI\func.vcd"
+[dumpfile_mtime] "Mon Feb 23 21:11:59 2026"
+[dumpfile_size] 13802619
+[savefile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\DAC_SPI\wave_save.gtkw"
+[timestart] 0
+[size] 1602 709
+[pos] 134 167
+*-7.000000 136 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] dac_spi_tb.
+[sst_width] 197
+[signals_width] 199
+[sst_expanded] 1
+[sst_vpaned_height] 191
+@28
+dac_spi_tb.dut.clk
+dac_spi_tb.dut.clk_spi
+dac_spi_tb.dut.rst
+@200
+-
+@28
+dac_spi_tb.dut.asi_ready
+dac_spi_tb.dut.asi_valid
+@22
+dac_spi_tb.dut.asi_data[15:0]
+@200
+-
+@28
+dac_spi_tb.dut.spi_clk
+dac_spi_tb.dut.spi_cs_n
+dac_spi_tb.dut.spi_data
+[pattern_trace] 1
+[pattern_trace] 0

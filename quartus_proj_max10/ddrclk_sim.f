@@ -1,0 +1,3 @@
+ddrclk_sim/ddrclk.vhd
+ddrclk_sim/altera_gpio_lite/altera_gpio_lite.sv
+ddrclk_sim/altera_gpio_lite/mentor/altera_gpio_lite.sv

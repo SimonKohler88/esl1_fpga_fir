@@ -1,0 +1,71 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Wed Feb 25 09:39:14 2026
+[*]
+[dumpfile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\ADC_SPI\func.vcd"
+[dumpfile_mtime] "Wed Feb 25 09:37:55 2026"
+[dumpfile_size] 105204
+[savefile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\ADC_SPI\wave_save.gtkw"
+[timestart] 0
+[size] 1920 1009
+[pos] -1 -1
+*-7.000000 621 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] adc_spi_tb.
+[sst_width] 197
+[signals_width] 222
+[sst_expanded] 1
+[sst_vpaned_height] 297
+@28
+adc_spi_tb.clk
+adc_spi_tb.clk_spi
+adc_spi_tb.clk_trigger
+adc_spi_tb.rst
+@200
+-
+@28
+adc_spi_tb.dut.spi_clk
+adc_spi_tb.dut.spi_cs_n
+adc_spi_tb.dut.spi_data
+@200
+-
+@28
+adc_spi_tb.dut.start_conversion
+adc_spi_tb.dut.start_conversion_ff[1:0]
+adc_spi_tb.dut.conversion_in_progress
+@24
+adc_spi_tb.dut.bit_cnt[3:0]
+@28
+adc_spi_tb.dut.conversion_done_sync
+@d00022
+adc_spi_tb.dut.shift_reg[15:0]
+@28
+(0)adc_spi_tb.dut.shift_reg[15:0]
+(1)adc_spi_tb.dut.shift_reg[15:0]
+(2)adc_spi_tb.dut.shift_reg[15:0]
+(3)adc_spi_tb.dut.shift_reg[15:0]
+(4)adc_spi_tb.dut.shift_reg[15:0]
+(5)adc_spi_tb.dut.shift_reg[15:0]
+(6)adc_spi_tb.dut.shift_reg[15:0]
+(7)adc_spi_tb.dut.shift_reg[15:0]
+(8)adc_spi_tb.dut.shift_reg[15:0]
+(9)adc_spi_tb.dut.shift_reg[15:0]
+(10)adc_spi_tb.dut.shift_reg[15:0]
+(11)adc_spi_tb.dut.shift_reg[15:0]
+(12)adc_spi_tb.dut.shift_reg[15:0]
+(13)adc_spi_tb.dut.shift_reg[15:0]
+(14)adc_spi_tb.dut.shift_reg[15:0]
+(15)adc_spi_tb.dut.shift_reg[15:0]
+@1401200
+-group_end
+@200
+-
+@22
+adc_spi_tb.dut.aso_data[15:0]
+adc_spi_tb.dut.aso_data_reg[15:0]
+@28
+adc_spi_tb.dut.aso_ready
+adc_spi_tb.dut.aso_valid
+@23
+adc_spi_tb.adc_value[15:0]
+[pattern_trace] 1
+[pattern_trace] 0
