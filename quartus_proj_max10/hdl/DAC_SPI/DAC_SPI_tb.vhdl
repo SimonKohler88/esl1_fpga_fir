@@ -9,7 +9,7 @@ architecture sim of DAC_SPI_tb is
 
     -- Clock periods
     constant CLK_PERIOD     : time := 5 ns;      -- 200 MHz
-    constant SPI_CLK_PERIOD : time := 29.4 ns;   -- 34 MHz
+    constant SPI_CLK_PERIOD : time := 25 ns;   -- 40 MHz
 
     signal clk     : std_logic := '0';
     signal clk_spi : std_logic := '0';
@@ -23,9 +23,11 @@ architecture sim of DAC_SPI_tb is
     signal asi_valid : std_logic := '0';
     signal asi_ready : std_logic;
 
-    -- Test data to send to the DAC
-    constant DAC_VALUE_1 : std_logic_vector(15 downto 0) := x"1234";
-    constant DAC_VALUE_2 : std_logic_vector(15 downto 0) := x"ABCD";
+    -- 2 MHz Avalon data rate -> 500 ns period
+    constant AVL_PERIOD : time := 500 ns;
+
+    signal spi_capure_data : std_logic_vector(11 downto 0);
+    signal spi_capture_mode : std_logic_vector(3 downto 0);
 
     signal sim_done : boolean := false;
 
@@ -49,8 +51,10 @@ begin
             asi_ready => asi_ready
         );
 
-    -- Main stimulus: feed data via Avalon-ST sink
+    -- Main stimulus: send 10 values at 2 MHz (500 ns period)
     p_stim : process
+        variable t_start : time;
+        variable dac_val : std_logic_vector(15 downto 0);
     begin
         rst <= '1';
         asi_valid <= '0';
@@ -59,24 +63,24 @@ begin
         rst <= '0';
         wait for 100 ns;
 
-        -- Wait until DUT is ready, then send first value
-        wait until rising_edge(clk) and asi_ready = '1';
-        asi_data  <= DAC_VALUE_1;
-        asi_valid <= '1';
-        wait until rising_edge(clk);
-        asi_valid <= '0';
+        for i in 0 to 9 loop
+            t_start := now;
+            dac_val := std_logic_vector(to_unsigned((i + 1) * 100, 16));
 
-        -- Wait for SPI transfer to complete
-        wait for 2 us;
+            -- Wait until DUT is ready, then send value
+            wait until rising_edge(clk) and asi_ready = '1';
+            asi_data  <= dac_val;
+            asi_valid <= '1';
+            wait until rising_edge(clk);
+            asi_valid <= '0';
 
-        -- Send second value
-        wait until rising_edge(clk) and asi_ready = '1';
-        asi_data  <= DAC_VALUE_2;
-        asi_valid <= '1';
-        wait until rising_edge(clk);
-        asi_valid <= '0';
+            -- Maintain 2 MHz rate: wait remainder of 500 ns period
+            if (now - t_start) < AVL_PERIOD then
+                wait for AVL_PERIOD - (now - t_start);
+            end if;
+        end loop;
 
-        -- Wait for SPI transfer to complete
+        -- Wait for last SPI transfer to complete
         wait for 2 us;
 
         sim_done <= true;
@@ -90,11 +94,13 @@ begin
     begin
         wait until spi_cs_n = '0';
         for bit_idx in 15 downto 0 loop
-            wait until rising_edge(spi_clk);
+            wait until falling_edge(spi_clk);
             captured(bit_idx) := spi_data;
         end loop;
         wait until spi_cs_n = '1';
-        report "DAC received: 0x" & to_hstring(captured) severity note;
+        spi_capure_data <= captured(11 downto 0);
+        spi_capture_mode <= captured(15 downto 12);
+        -- report "DAC received: 0x" & to_hstring(captured) severity note;
     end process;
 
 end architecture sim;

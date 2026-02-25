@@ -1,18 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
-[*] Mon Feb 23 21:12:56 2026
+[*] Wed Feb 25 15:58:56 2026
 [*]
 [dumpfile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\DAC_SPI\func.vcd"
-[dumpfile_mtime] "Mon Feb 23 21:11:59 2026"
-[dumpfile_size] 13802619
+[dumpfile_mtime] "Wed Feb 25 15:56:53 2026"
+[dumpfile_size] 70417
 [savefile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\DAC_SPI\wave_save.gtkw"
-[timestart] 0
+[timestart] 1180
 [size] 1602 709
-[pos] 134 167
-*-7.000000 136 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-10.000000 194 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dac_spi_tb.
-[sst_width] 197
-[signals_width] 199
+[sst_width] 315
+[signals_width] 309
 [sst_expanded] 1
 [sst_vpaned_height] 191
 @28
@@ -32,5 +32,18 @@ dac_spi_tb.dut.asi_data[15:0]
 dac_spi_tb.dut.spi_clk
 dac_spi_tb.dut.spi_cs_n
 dac_spi_tb.dut.spi_data
+@29
+dac_spi_tb.dut.spi_busy
+@28
+dac_spi_tb.dut.spi_transmission_start
+dac_spi_tb.dut.spi_transmission_done
+dac_spi_tb.dut.transmission_in_progress
+dac_spi_tb.dut.transmission_in_progress_ff[1:0]
+@200
+-
+@22
+dac_spi_tb.spi_capture_mode[3:0]
+@24
+dac_spi_tb.spi_capure_data[11:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -17,7 +17,6 @@ if %ERRORLEVEL%==1 (
 	PAUSE
 ) else (
 	gtkwave func.vcd wave_save.gtkw
-	REM gtkwave func.vcd wave_save.gtkw
 )
 
 :end
