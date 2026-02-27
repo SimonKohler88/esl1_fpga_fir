@@ -1,0 +1,50 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Wed Feb 25 20:42:56 2026
+[*]
+[dumpfile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\MCU_SPI\func.vcd"
+[dumpfile_mtime] "Wed Feb 25 20:41:26 2026"
+[dumpfile_size] 247946
+[savefile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\MCU_SPI\wave_save.gtkw"
+[timestart] 0
+[size] 1340 600
+[pos] -1 -1
+*-12.000000 6040 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] mcu_spi_tb.
+[treeopen] mcu_spi_tb.dut.
+[sst_width] 197
+[signals_width] 190
+[sst_expanded] 1
+[sst_vpaned_height] 117
+@28
+mcu_spi_tb.dut.clk
+mcu_spi_tb.dut.rst
+mcu_spi_tb.dut.spi_clk
+mcu_spi_tb.dut.spi_cs_n
+mcu_spi_tb.dut.spi_mosi
+mcu_spi_tb.dut.spi_miso
+mcu_spi_tb.dut.phy_byte_valid
+@22
+mcu_spi_tb.dut.phy_rx_data[7:0]
+@200
+-
+@28
+mcu_spi_tb.dut.u_spi_protocol.cmd_rw
+@22
+mcu_spi_tb.dut.u_spi_protocol.cmd_nr[6:0]
+mcu_spi_tb.dut.u_spi_protocol.byte_cnt[8:0]
+@28
+mcu_spi_tb.dut.u_spi_protocol.cmd_rw
+@22
+mcu_spi_tb.dut.u_spi_protocol.payload_len[8:0]
+@200
+-
+@22
+mcu_spi_tb.dut.u_spi_protocol.reg_byte_nr[8:0]
+mcu_spi_tb.dut.u_spi_protocol.reg_cmd[6:0]
+mcu_spi_tb.dut.u_spi_protocol.reg_rdata[7:0]
+mcu_spi_tb.dut.u_spi_protocol.reg_wdata[7:0]
+@29
+mcu_spi_tb.dut.u_spi_protocol.reg_wr_en
+[pattern_trace] 1
+[pattern_trace] 0

@@ -1,0 +1,45 @@
+[*]
+[*] GTKWave Analyzer v3.3.100 (w)1999-2019 BSI
+[*] Thu Feb 26 08:18:43 2026
+[*]
+[dumpfile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\BUS_BYPASS_MUX\func.vcd"
+[dumpfile_mtime] "Thu Feb 26 08:18:27 2026"
+[dumpfile_size] 12946991
+[savefile] "D:\GitHub\esl1_fpga_fir\quartus_proj_max10\hdl\BUS_BYPASS_MUX\wave_save.gtkw"
+[timestart] 0
+[size] 1545 818
+[pos] -1 -1
+*-5.000000 47 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] bus_bypass_mux_tb.
+[sst_width] 232
+[signals_width] 192
+[sst_expanded] 1
+[sst_vpaned_height] 144
+@28
+bus_bypass_mux_tb.dut.clk
+bus_bypass_mux_tb.dut.rst
+bus_bypass_mux_tb.dut.sel
+@200
+-
+@22
+bus_bypass_mux_tb.dut.av_in1_data[15:0]
+bus_bypass_mux_tb.dut.av_in2_data[15:0]
+bus_bypass_mux_tb.dut.av_out1_data[15:0]
+bus_bypass_mux_tb.dut.av_out2_data[15:0]
+@200
+-
+@28
+bus_bypass_mux_tb.dut.av_in1_ready
+bus_bypass_mux_tb.dut.av_in2_ready
+bus_bypass_mux_tb.dut.av_out1_ready
+bus_bypass_mux_tb.dut.av_out2_ready
+@200
+-
+@28
+bus_bypass_mux_tb.dut.av_in1_valid
+bus_bypass_mux_tb.dut.av_in2_valid
+bus_bypass_mux_tb.dut.av_out1_valid
+@29
+bus_bypass_mux_tb.dut.av_out2_valid
+[pattern_trace] 1
+[pattern_trace] 0

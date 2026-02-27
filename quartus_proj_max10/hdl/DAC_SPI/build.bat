@@ -11,7 +11,7 @@ if %ERRORLEVEL%==1 (
 	goto end
 )
 
-ghdl -r --std=08 --time-resolution=ns %MODULE%_tb --vcd=func.vcd --stop-time=1500us
+ghdl -r --std=08 --time-resolution=ps %MODULE%_tb --vcd=func.vcd --stop-time=1500us
 
 if %ERRORLEVEL%==1 (
 	PAUSE

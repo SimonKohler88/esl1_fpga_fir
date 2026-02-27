@@ -154,6 +154,12 @@ set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
 set_location_assignment PIN_E1 -to RESERVE_1
 set_location_assignment PIN_C2 -to RESERVE_2
 set_location_assignment PIN_C1 -to RESERVE_3
+set_global_assignment -name VHDL_FILE hdl/BUS_BYPASS_MUX/BUS_BYPASS_MUX.vhdl
+set_global_assignment -name VHDL_FILE hdl/MCU_SPI/spi_reg_bank.vhdl
+set_global_assignment -name VHDL_FILE hdl/MCU_SPI/spi_protocol.vhdl
+set_global_assignment -name VHDL_FILE hdl/MCU_SPI/spi_phy.vhdl
+set_global_assignment -name VHDL_FILE hdl/MCU_SPI/spi_cmd_package.vhdl
+set_global_assignment -name VHDL_FILE hdl/MCU_SPI/MCU_SPI.vhdl
 set_global_assignment -name VHDL_FILE hdl/DAC_SPI/DAC_SPI.vhdl
 set_global_assignment -name VHDL_FILE hdl/FIR/fir_types.vhdl
 set_global_assignment -name VHDL_FILE hdl/FIR/fir_filter.vhdl
