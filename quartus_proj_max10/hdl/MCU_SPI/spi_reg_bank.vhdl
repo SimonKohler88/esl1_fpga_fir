@@ -33,6 +33,8 @@ architecture rtl of spi_reg_bank is
     signal coeff_array  : FIR_type_coeffs := (others => (others => '0'));
     signal mux_ctrl_reg : std_logic_vector(15 downto 0) := (others => '0');
     signal status_reg_int : std_logic_vector(7 downto 0) := (others => '0');
+    signal status_reg_accessed : std_logic := '0';
+    signal status_reg_accessed_ff :std_logic_vector(1 downto 0) := (others => '0');
 
     signal cmd_int      : integer range 0 to 127;
     signal byte_nr_int  : integer range 0 to 511;
@@ -84,6 +86,25 @@ begin
         end if;
     end process;
 
+    ----
+    -- STATUS REG: can only be read, write attempts are ignored. Cleared on read and reset.
+    ---
+
+    p_status_shadow : process(all)
+    begin   
+        if rst = '1' then
+            status_reg_int <= (others => '0');
+            status_reg_accessed_ff <= (others => '0');
+        else
+            status_reg_accessed_ff <= status_reg_accessed_ff(0) & status_reg_accessed;
+            if status_reg_accessed_ff(1 downto 0) = "10" then
+                status_reg_int <= (others => '0');
+            else
+                status_reg_int <= status_reg_int or status_reg;
+            end if;
+        end if;
+    end process;
+
     ---------------------------------------------------------------
     -- READ mux: combinational, always drives reg_rdata
     ---------------------------------------------------------------
@@ -115,11 +136,16 @@ begin
             
             when 2 =>  -- Status reg
                 if byte_nr_int = 0 then
-                    reg_rdata <= status_reg;
+                    reg_rdata <= status_reg_int;
+                    status_reg_accessed <= '1';
+                else
+                    status_reg_accessed <= '0';
                 end if;
 
             when others => null;
         end case;
     end process;
+
+
 
 end architecture;
