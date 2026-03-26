@@ -1,0 +1,9 @@
+﻿Designator,Footprint,Quantity,Value,LCSC Part #
+"C101, C102, C103, C104, C105",1206,5,100n,
+J101,PinHeader_2x08_P2.54mm_Vertical,1,Conn_01x16_Pin,
+"R101, R102",1206,2,4k7,
+"R103, R104",1206,2,100,
+"R105, R106",1206,2,10k,
+"SW101, SW102",Push_E-Switch_KS01Q01,2,SW_Push,
+SW103,RotaryEncoder_Bourns_Vertical_PEC12R-3x17F-Nxxxx,1,RotaryEncoder,
+U101,CR2013-MI2120,1,CR2013-MI2120,
